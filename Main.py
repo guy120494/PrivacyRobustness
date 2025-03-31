@@ -225,7 +225,7 @@ def setup_args(args):
     torch.manual_seed(args.seed)
 
     if args.wandb_active:
-        wandb.init(project=args.wandb_project_name, entity='dataset_reconsruction')
+        wandb.init(project=args.wandb_project_name, entity=args.wandb_entity)
         wandb.config.update(args)
 
     if args.wandb_active:
