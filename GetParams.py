@@ -41,6 +41,8 @@ def get_args(*args):
     parser.add_argument('--wandb_active', default='false', type=str2bool, help='actviate wandb logging')
     parser.add_argument('--wandb_project_name', default='Dataset_Extraction', help='')
     parser.add_argument('--wandb_entity', default='dataset_extraction', help='')
+    parser.add_argument('--wandb_login', default='', help='')
+    parser.add_argument('--wandb_id', default='', help='')
 
     # data creation
     parser.add_argument('--problem', help='')
@@ -52,7 +54,7 @@ def get_args(*args):
     # model_train
     parser.add_argument('--model_type', default='mlp', help='options: mlp')
     parser.add_argument('--model_hidden_list', default='[1000, 1000]', type=str2list, help='should be a list, even for one item. ')
-    parser.add_argument('--model_use_bias', default='false', type=str2bool, help='')
+    parser.add_argument('--model_use_bias', default='true', type=str2bool, help='')
 
     # train
     parser.add_argument('--use_init_scale', default='true', type=str2bool, help='')
@@ -65,6 +67,10 @@ def get_args(*args):
     parser.add_argument('--train_threshold', default=1e-40, type=float, help='stop training below this loss')
     parser.add_argument('--train_SGD', default='false', type=str2bool, help='')
     parser.add_argument('--train_SGD_batch_size', default=64, type=int, help='')
+    parser.add_argument('--train_robust', default='true', type=str2bool, help='')
+    parser.add_argument('--train_robust_epochs', default=40, type=int, help='')
+    parser.add_argument('--train_robust_lr', default=0.01, type=float, help='')
+    parser.add_argument('--train_robust_radius', default=0.3, type=float, help='')
 
     # extraction
     parser.add_argument('--extraction_epochs', default=1000, type=int, help='')

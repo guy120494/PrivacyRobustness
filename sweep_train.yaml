@@ -1,0 +1,120 @@
+method: random
+metric:
+  goal: minimize
+  name: loss
+parameters:
+  cuda:
+    distribution: categorical
+    values:
+      - true
+  data_per_class_test:
+    distribution: categorical
+    values:
+      - 1000
+  data_per_class_train:
+    distribution: categorical
+    values:
+      - 250
+  data_reduce_mean:
+    distribution: categorical
+    values:
+      - true
+  model_train_activation:
+    distribution: categorical
+    values:
+      - "relu"
+  model_type:
+    distribution: categorical
+    values:
+      - mlp
+  model_use_bias:
+    distribution: categorical
+    values:
+      - true
+      - false
+  model_hidden_list:
+    values:
+      - "[500, 500]"
+      - "[1000, 1000]"
+      - "[10000, 10000]"
+    distribution: categorical
+  precision:
+    distribution: categorical
+    values:
+      - double
+  problem:
+    distribution: categorical
+    values:
+      - mnist_odd_even
+  proj_name:
+    distribution: categorical
+    values:
+      - mnist_odd_even
+  run_mode:
+    distribution: categorical
+    values:
+      - train
+  seed:
+    distribution: categorical
+    values:
+      - 1
+      - 42
+  train_epochs:
+    distribution: categorical
+    values:
+      - 100000
+  train_evaluate_rate:
+    distribution: categorical
+    values:
+      - 500
+  train_lr:
+    distribution: categorical
+    values:
+      - 0.1
+  train_robust:
+    distribution: categorical
+    values:
+      - true
+      - false
+  train_robust_epochs:
+    distribution: categorical
+    values:
+      - 25
+      - 20
+      - 10
+  train_robust_lr:
+    distribution: categorical
+    values:
+      - 0.1
+  train_robust_radius:
+    distribution: categorical
+    values:
+      - 0.4
+      - 0.2
+      - 0.1
+  use_init_scale:
+    distribution: categorical
+    values:
+      - true
+      - false
+  wandb_active:
+    distribution: categorical
+    values:
+      - true
+  wandb_project_name:
+    distribution: categorical
+    values:
+      - Dataset_Extraction
+  save_args_files:
+    distribution: categorical
+    values:
+      - false
+  train_save_model:
+    distribution: categorical
+    values:
+      - false
+  extract_save_results:
+    distribution: categorical
+    values:
+      - false
+program: Main.py
