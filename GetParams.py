@@ -39,8 +39,8 @@ def get_args(*args):
 
     # wandb
     parser.add_argument('--wandb_active', default='false', type=str2bool, help='actviate wandb logging')
-    parser.add_argument('--wandb_project_name', default='Dataset_Extraction', help='')
-    parser.add_argument('--wandb_entity', default='dataset_extraction', help='')
+    parser.add_argument('--wandb_project_name', default='PrivacyRobustness', help='')
+    parser.add_argument('--wandb_entity', default='smorodin-bgu', help='')
     parser.add_argument('--wandb_login', default='', help='')
     parser.add_argument('--wandb_id', default='', help='')
 
