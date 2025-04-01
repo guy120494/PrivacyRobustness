@@ -137,9 +137,9 @@ def sweep_get_data_model(sweep, verbose=True, run_train_test=False, put_in_sweep
         train_loader = [(Xtrn, Ytrn)]
         test_loader = [(Xtst, Ytst)]
         # compute train/test (reduce mean there..)
-        trn_error, trn_loss, trn_vals = epoch_ce(args, train_loader, model, epoch=-1, device=args.device, opt=None)
+        trn_error, trn_loss, trn_vals, _ = epoch_ce(args, train_loader, model, epoch=-1, device=args.device, opt=None)
         if verbose: print('Train Error:', trn_error, trn_loss)
-        tst_error, tst_loss, tst_vals = epoch_ce(args, test_loader, model, epoch=-1, device=args.device, opt=None)
+        tst_error, tst_loss, tst_vals, _ = epoch_ce(args, test_loader, model, epoch=-1, device=args.device, opt=None)
         if verbose: print('Test  Error:', tst_error, tst_loss)
         sweep.trn_error = trn_error
         sweep.trn_loss = trn_loss

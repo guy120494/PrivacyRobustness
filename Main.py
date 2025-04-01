@@ -1,11 +1,14 @@
 import os
+import random
 import sys
+from collections import namedtuple
 
 import threadpoolctl
 import torch
 import numpy as np
 import datetime
 import wandb
+from robustness.attacker import AttackerModel, Attacker
 
 import common_utils
 from common_utils.common import AverageValueMeter, load_weights, now, save_weights
@@ -16,6 +19,7 @@ from GetParams import get_args
 
 thread_limit = threadpoolctl.threadpool_limits(limits=8)
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+
 
 ###############################################################################
 #                               Train                                         #
@@ -63,6 +67,8 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
     model.train()
     for i, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
+        if args.train_robust:
+            x = get_adv_examples(args, dataloader, model, x, y)
         loss, p = get_loss_ce(args, model, x, y)
 
         if opt:
@@ -74,7 +80,26 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
         total_err.update(err)
 
         total_loss.update(loss.item())
-    return total_err.avg, total_loss.avg, p.data
+    return total_err.avg, total_loss.avg, p.data, x
+
+
+def get_adv_examples(args, dataloader, model, x, y):
+    def get_loss_for_adv_examples(model, x, y):
+        p = model(x)
+        p = p.view(-1)
+        loss = torch.nn.BCEWithLogitsLoss(reduction='none')(p, y)
+        return loss, None
+
+    Xtrn, _ = next(iter(dataloader))
+    ds_mean = Xtrn.mean().squeeze()
+    ds_std = Xtrn.std().squeeze()
+    MyDataset = namedtuple('MyDataset', 'mean std')
+    adv_model = Attacker(model, MyDataset(mean=torch.tensor(0, dtype=torch.float64, device=args.device),
+                                          std=torch.tensor(1, dtype=torch.float64, device=args.device)))
+    adv_x = adv_model(x, y, should_normalize=False, constraint="2", eps=args.train_robust_radius,
+                      step_size=args.train_robust_lr, iterations=args.train_robust_epochs, do_tqdm=False,
+                      custom_loss=get_loss_for_adv_examples)
+    return adv_x
 
 
 def train(args, train_loader, test_loader, val_loader, model):
@@ -98,19 +123,24 @@ def train(args, train_loader, test_loader, val_loader, model):
         # if args.train_SGD:
         #     train_error, train_loss, output = epoch_ce_sgd(args, train_loader, model, epoch, args.device, args.train_SGD_batch_size, optimizer)
         # else:
-        train_error, train_loss, output = epoch_ce(args, train_loader, model, epoch, args.device, optimizer)
+        train_error, train_loss, output, x = epoch_ce(args, train_loader, model, epoch, args.device, optimizer)
 
         if epoch % args.train_evaluate_rate == 0:
-            test_error, test_loss, _ = epoch_ce(args, test_loader, model, args.device, None, None)
+            test_error, test_loss, _, _ = epoch_ce(args, test_loader, model, args.device, None, None)
             if val_loader is not None:
-                validation_error, validation_loss, _ = epoch_ce(args, val_loader, model, args.device, None, None)
-                print(now(), f'Epoch {epoch}: train-loss = {train_loss:.8g} ; train-error = {train_error:.4g} ; test-loss = {test_loss:.8g} ; test-error = {test_error:.4g} ; validation-loss = {validation_loss:.8g} ; validation-error = {validation_error:.4g} ; p-std = {output.abs().std()}; p-val = {output.abs().mean()}')
+                validation_error, validation_loss, _, _ = epoch_ce(args, val_loader, model, args.device, None, None)
+                print(now(),
+                      f'Epoch {epoch}: train-loss = {train_loss:.8g} ; train-error = {train_error:.4g} ; test-loss = {test_loss:.8g} ; test-error = {test_error:.4g} ; validation-loss = {validation_loss:.8g} ; validation-error = {validation_error:.4g} ; p-std = {output.abs().std()}; p-val = {output.abs().mean()}')
             else:
                 print(now(),
                       f'Epoch {epoch}: train-loss = {train_loss:.8g} ; train-error = {train_error:.4g} ; test-loss = {test_loss:.8g} ; test-error = {test_error:.4g} ; p-std = {output.abs().std()}; p-val = {output.abs().mean()}')
 
             if args.wandb_active:
-                wandb.log({"epoch": epoch, "train loss": train_loss, 'train error': train_error, 'p-val':output.abs().mean(), 'p-std': output.abs().std()})
+                wandb.log(
+                    {"epoch": epoch, "train loss": train_loss, 'train error': train_error, 'p-val': output.abs().mean(),
+                     'p-std': output.abs().std(),
+                     'adversarial images': wandb.Image(
+                         x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy(), caption=f'Adversarial')})
                 if val_loader is not None:
                     wandb.log({'validation loss': validation_loss, 'validation error': validation_error})
                 wandb.log({'test loss': test_loss, 'test error': test_error})
@@ -134,7 +164,6 @@ def train(args, train_loader, test_loader, val_loader, model):
 ###############################################################################
 
 def data_extraction(args, dataset_loader, model):
-
     # we use dataset only for shapes and post-visualization (adding mean if it was reduced)
     x0, y0 = next(iter(dataset_loader))
     print('X:', x0.shape, x0.device)
@@ -241,6 +270,25 @@ def setup_args(args):
 
     return args
 
+def get_robustness_error(args, model, train_loader):
+    if args.data_reduce_mean:
+        Xtrn, Ytrn = next(iter(train_loader))
+        ds_mean = Xtrn.mean(dim=0, keepdims=True)
+        Xtrn = Xtrn - ds_mean
+        train_loader = [(Xtrn, Ytrn)]
+
+    total_err = AverageValueMeter()
+    model.eval()
+    with torch.no_grad():
+        for i, (x, y) in enumerate(train_loader):
+            x, y = x.to(args.device), y.to(args.device)
+            x = get_adv_examples(args, train_loader, model, x, y)
+            loss, p = get_loss_ce(args, model, x, y)
+
+            err = get_total_err(args, p, y)
+            total_err.update(err)
+    return total_err.avg
+
 
 def main_train(args, train_loader, test_loader, val_loader):
     print('TRAINING A MODEL')
@@ -249,6 +297,8 @@ def main_train(args, train_loader, test_loader, val_loader):
         wandb.watch(model)
 
     trained_model = train(args, train_loader, test_loader, val_loader, model)
+    if args.wandb_active:
+        wandb.log({"robustness score": get_robustness_error(args, model, train_loader)})
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
 
@@ -267,7 +317,7 @@ def main_reconstruct(args, train_loader):
 def validate_settings_exists():
     if os.path.isfile("settings.py"):
         return
-    raise FileNotFoundError("You should create a 'settings.py' file with the contents of 'settings.deafult.py', " + 
+    raise FileNotFoundError("You should create a 'settings.py' file with the contents of 'settings.deafult.py', " +
                             "adjusted according to your system")
 
 
@@ -279,7 +329,7 @@ def main():
     create_dirs_save_files(args)
     print('ARGS:')
     print(args)
-    print('*'*100)
+    print('*' * 100)
 
     if args.cuda:
         print(f'os.environ["CUDA_VISIBLE_DEVICES"]={os.environ["CUDA_VISIBLE_DEVICES"]}')
