@@ -13,6 +13,6 @@
 echo "SLURM_JOBID"=$SLURM_JOBID echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
 ### Start your code below ####
 module load anaconda              ### load anaconda module
-source activate robustnessPrivacy            ### activate a conda environment, replace my_env with your conda environment
+source activate privacyrobustness            ### activate a conda environment, replace my_env with your conda environment
 CUDA_VISIBLE_DEVICES=0
 wandb agent smorodin-bgu/Dataset_Extraction/7cdra6vj
