@@ -281,14 +281,13 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     total_err = AverageValueMeter()
     total_acc = AverageValueMeter()
     model.eval()
-    with torch.no_grad():
-        for i, (x, y) in enumerate(train_loader):
-            x, y = x.to(args.device), y.to(args.device)
-            x = get_adv_examples(args, train_loader, model, x, y)
-            loss, p = get_loss_ce(args, model, x, y)
-            err = get_total_err(args, p, y)
-            total_err.update(err)
-            total_acc.update((p.sign().view(-1).add(1).div(2) == y).float().mean().item())
+    for i, (x, y) in enumerate(train_loader):
+        x, y = x.to(args.device), y.to(args.device)
+        x = get_adv_examples(args, train_loader, model, x, y)
+        loss, p = get_loss_ce(args, model, x, y)
+        err = get_total_err(args, p, y)
+        total_err.update(err)
+        total_acc.update((p.sign().view(-1).add(1).div(2) == y).float().mean().item())
     return total_err.avg, total_acc.avg
 
 
@@ -299,9 +298,12 @@ def main_train(args, train_loader, test_loader, val_loader):
         wandb.watch(model)
 
     trained_model = train(args, train_loader, test_loader, val_loader, model)
+    error, accuracy = get_robustness_error_and_accuracy(args, model, train_loader)
     if args.wandb_active:
-        error, accuracy = get_robustness_error_and_accuracy(args, model, train_loader)
         wandb.log({"robustness error": error, "robustness accuracy": accuracy})
+    else:
+        print(f"robustness error: {error}")
+        print(f"robustness accuracy: {accuracy}")
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
 
