@@ -140,7 +140,8 @@ def train(args, train_loader, test_loader, val_loader, model):
                     {"epoch": epoch, "train loss": train_loss, 'train error': train_error, 'p-val': output.abs().mean(),
                      'p-std': output.abs().std(),
                      'adversarial images': wandb.Image(
-                         x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy(), caption=f'Adversarial')})
+                         x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy().transpose([1, 2, 0]),
+                         caption=f'Adversarial')})
                 if val_loader is not None:
                     wandb.log({'validation loss': validation_loss, 'validation error': validation_error})
                 wandb.log({'test loss': test_loss, 'test error': test_error})
