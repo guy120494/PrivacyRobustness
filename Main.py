@@ -16,7 +16,7 @@ from CreateData import setup_problem
 from CreateModel import create_model
 from extraction import calc_extraction_loss, evaluate_extraction, get_trainable_params
 from GetParams import get_args
-from utils import normalize_images
+from utils import normalize_images, unnormalize_images
 
 thread_limit = threadpoolctl.threadpool_limits(limits=8)
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -84,6 +84,10 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
         total_err.update(err)
 
         total_loss.update(loss.item())
+
+    if args.data_reduce_mean:
+        x = unnormalize_images(x, x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist(),
+                               x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist())
     return total_err.avg, total_loss.avg, p.data, x
 
 
