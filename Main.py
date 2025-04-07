@@ -68,11 +68,11 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
     model.train()
     for i, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
+        mean = x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
+        std = x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
         if args.train_robust:
             x = get_adv_examples(args, model, x, y)
         if args.data_reduce_mean:
-            mean = x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
-            std = x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
             x = normalize_images(x, mean=mean, std=std)
         loss, p = get_loss_ce(args, model, x, y)
 
