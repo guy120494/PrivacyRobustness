@@ -69,7 +69,7 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
     for i, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
         if args.train_robust:
-            x = get_adv_examples(args, dataloader, model, x, y)
+            x = get_adv_examples(args, model, x, y)
         if args.data_reduce_mean:
             x = normalize_images(x, x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist(),
                                  x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist())
@@ -87,20 +87,18 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
     return total_err.avg, total_loss.avg, p.data, x
 
 
-def get_adv_examples(args, dataloader, model, x, y):
+def get_adv_examples(args, model, x, y):
     def get_loss_for_adv_examples(model, x, y):
         p = model(x)
         p = p.view(-1)
         loss = torch.nn.BCEWithLogitsLoss(reduction='none')(p, y)
         return loss, None
 
-    Xtrn, _ = next(iter(dataloader))
-    ds_mean = Xtrn.mean().squeeze()
-    ds_std = Xtrn.std().squeeze()
+    ds_mean = x.mean(dim=[0, -2, -1])
+    ds_std = x.std(dim=[0, -2, -1])
     MyDataset = namedtuple('MyDataset', 'mean std')
-    adv_model = Attacker(model, MyDataset(mean=torch.tensor(0, dtype=torch.float64, device=args.device),
-                                          std=torch.tensor(1, dtype=torch.float64, device=args.device)))
-    adv_x = adv_model(x, y, should_normalize=False, constraint="2", eps=args.train_robust_radius,
+    adv_model = Attacker(model, MyDataset(mean=ds_mean, std=ds_std))
+    adv_x = adv_model(x, y, should_normalize=args.data_reduce_mean, constraint="2", eps=args.train_robust_radius,
                       step_size=args.train_robust_lr, iterations=args.train_robust_epochs, do_tqdm=False,
                       custom_loss=get_loss_for_adv_examples)
     return adv_x
@@ -110,10 +108,6 @@ def train(args, train_loader, test_loader, val_loader, model):
     optimizer = torch.optim.SGD(model.parameters(), lr=args.train_lr)
     print('Model:')
     print(model)
-
-    Xtrn, Ytrn = next(iter(train_loader))
-    args.mean = Xtrn.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
-    args.std = Xtrn.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
 
     for epoch in range(args.train_epochs + 1):
         # if args.train_SGD:
@@ -280,7 +274,10 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     model.eval()
     for i, (x, y) in enumerate(train_loader):
         x, y = x.to(args.device), y.to(args.device)
-        x = get_adv_examples(args, train_loader, model, x, y)
+        x = get_adv_examples(args, model, x, y)
+        if args.data_reduce_mean:
+            x = normalize_images(x, x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist(),
+                                 x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist())
         loss, p = get_loss_ce(args, model, x, y)
         err = get_total_err(args, p, y)
         total_err.update(err)
