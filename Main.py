@@ -16,6 +16,7 @@ from CreateData import setup_problem
 from CreateModel import create_model
 from extraction import calc_extraction_loss, evaluate_extraction, get_trainable_params
 from GetParams import get_args
+from utils import normalize_images
 
 thread_limit = threadpoolctl.threadpool_limits(limits=8)
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -69,6 +70,9 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
         x, y = x.to(device), y.to(device)
         if args.train_robust:
             x = get_adv_examples(args, dataloader, model, x, y)
+        if args.data_reduce_mean:
+            x = normalize_images(x, x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist(),
+                                 x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist())
         loss, p = get_loss_ce(args, model, x, y)
 
         if opt:
@@ -107,17 +111,9 @@ def train(args, train_loader, test_loader, val_loader, model):
     print('Model:')
     print(model)
 
-    # Handle Reduce Mean
-    if args.data_reduce_mean:
-        print('Reducing Trainset-Mean from Trainset and Testset')
-        Xtrn, Ytrn = next(iter(train_loader))
-        ds_mean = Xtrn.mean(dim=0, keepdims=True)
-        Xtrn = Xtrn - ds_mean
-        train_loader = [(Xtrn, Ytrn)]
-
-        Xtst, Ytst = next(iter(test_loader))
-        Xtst = Xtst - ds_mean
-        test_loader = [(Xtst, Ytst)]
+    Xtrn, Ytrn = next(iter(train_loader))
+    args.mean = Xtrn.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
+    args.std = Xtrn.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
 
     for epoch in range(args.train_epochs + 1):
         # if args.train_SGD:
