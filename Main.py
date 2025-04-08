@@ -267,12 +267,6 @@ def setup_args(args):
 
 
 def get_robustness_error_and_accuracy(args, model, train_loader):
-    if args.data_reduce_mean:
-        Xtrn, Ytrn = next(iter(train_loader))
-        ds_mean = Xtrn.mean(dim=0, keepdims=True)
-        Xtrn = Xtrn - ds_mean
-        train_loader = [(Xtrn, Ytrn)]
-
     total_err = AverageValueMeter()
     total_acc = AverageValueMeter()
     model.eval()
@@ -280,8 +274,7 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
         x, y = x.to(args.device), y.to(args.device)
         x = get_adv_examples(args, model, x, y)
         if args.data_reduce_mean:
-            x = normalize_images(x, x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist(),
-                                 x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist())
+            x = normalize_images(x, mean=args.mean, std=args.std)
         loss, p = get_loss_ce(args, model, x, y)
         err = get_total_err(args, p, y)
         total_err.update(err)
