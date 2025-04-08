@@ -68,12 +68,11 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
     model.train()
     for i, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
-        mean = x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
-        std = x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
+
         if args.train_robust:
             x = get_adv_examples(args, model, x, y)
         if args.data_reduce_mean:
-            x = normalize_images(x, mean=mean, std=std)
+            x = normalize_images(x, mean=args.mean, std=args.std)
         loss, p = get_loss_ce(args, model, x, y)
 
         if opt:
@@ -87,7 +86,7 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
         total_loss.update(loss.item())
 
     if args.data_reduce_mean:
-        x = unnormalize_images(x, mean=mean, std=std)
+        x = unnormalize_images(x, mean=args.mean, std=args.std)
     return total_err.avg, total_loss.avg, p.data, x
 
 
@@ -98,10 +97,8 @@ def get_adv_examples(args, model, x, y):
         loss = torch.nn.BCEWithLogitsLoss(reduction='none')(p, y)
         return loss, None
 
-    ds_mean = x.mean(dim=[0, -2, -1])
-    ds_std = x.std(dim=[0, -2, -1])
     MyDataset = namedtuple('MyDataset', 'mean std')
-    adv_model = Attacker(model, MyDataset(mean=ds_mean, std=ds_std))
+    adv_model = Attacker(model, MyDataset(mean=args.mean, std=args.std))
     adv_x = adv_model(x, y, should_normalize=args.data_reduce_mean, constraint="inf", eps=args.train_robust_radius,
                       step_size=args.train_robust_lr, iterations=args.train_robust_epochs, do_tqdm=False,
                       custom_loss=get_loss_for_adv_examples)
@@ -112,7 +109,10 @@ def train(args, train_loader, test_loader, val_loader, model):
     optimizer = torch.optim.SGD(model.parameters(), lr=args.train_lr)
     print('Model:')
     print(model)
-
+    x, _ = next(iter(train_loader))
+    args.mean = x.mean(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
+    # args.std = x.std(dim=[0, -2, -1]).detach().cpu().numpy().tolist()
+    args.std = torch.ones_like(x.mean(dim=[0, -2, -1])).detach().cpu().numpy().tolist()  # Should work better with KKT
     for epoch in range(args.train_epochs + 1):
         # if args.train_SGD:
         #     train_error, train_loss, output = epoch_ce_sgd(args, train_loader, model, epoch, args.device, args.train_SGD_batch_size, optimizer)
