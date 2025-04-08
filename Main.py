@@ -102,7 +102,7 @@ def get_adv_examples(args, model, x, y):
     ds_std = x.std(dim=[0, -2, -1])
     MyDataset = namedtuple('MyDataset', 'mean std')
     adv_model = Attacker(model, MyDataset(mean=ds_mean, std=ds_std))
-    adv_x = adv_model(x, y, should_normalize=args.data_reduce_mean, constraint="2", eps=args.train_robust_radius,
+    adv_x = adv_model(x, y, should_normalize=args.data_reduce_mean, constraint="inf", eps=args.train_robust_radius,
                       step_size=args.train_robust_lr, iterations=args.train_robust_epochs, do_tqdm=False,
                       custom_loss=get_loss_for_adv_examples)
     return adv_x
