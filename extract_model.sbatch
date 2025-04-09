@@ -1,7 +1,7 @@
 #!/bin/bash
 ### sbatch config parameters must start with #SBATCH and must precede any other command. to ignore just add another # - like ##SBATCH
 #SBATCH --partition main                        ### partition name where to run a job. Use ‘main’ unless qos is required. qos partitions ‘rtx3090’ ‘rtx2080’ ‘gtx1080’
-#SBATCH --time 6-23:59:59                      ### limit the time of job running. Make sure it is not greater than the partition time limit (7 days)!! Format: D-H:MM:SS
+#SBATCH --time 3-23:59:59                      ### limit the time of job running. Make sure it is not greater than the partition time limit (7 days)!! Format: D-H:MM:SS
 #SBATCH --job-name train_mnist_model                   ### name of the job. replace my_job with your desired job name
 #SBATCH --output train_mnist_model-%J.out                ### output log for running job - %J is the job number variable
 #SBATCH --mail-user=smorodin@post.bgu.ac.il      ### user’s email for sending job status notifications
