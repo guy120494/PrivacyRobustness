@@ -70,7 +70,12 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
         x, y = x.to(device), y.to(device)
 
         if args.train_robust:
-            x = get_adv_examples(args, model, x, y)
+            if args.train_add_adv_examples:
+                x_adv = get_adv_examples(args, model, x, y)
+                x = torch.cat([x, x_adv], dim=0)
+                y = torch.cat([y, y], dim=0)
+            else:
+                x = get_adv_examples(args, model, x, y)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
         loss, p = get_loss_ce(args, model, x, y)

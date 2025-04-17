@@ -71,6 +71,7 @@ def get_args(*args):
     parser.add_argument('--train_robust_epochs', default=40, type=int, help='')
     parser.add_argument('--train_robust_lr', default=0.01, type=float, help='')
     parser.add_argument('--train_robust_radius', default=0.3, type=float, help='')
+    parser.add_argument('--train_add_adv_examples', default='false', type=str2bool, help='')
 
     # extraction
     parser.add_argument('--extraction_epochs', default=1000, type=int, help='')
