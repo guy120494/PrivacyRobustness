@@ -148,4 +148,9 @@ parameters:
     distribution: categorical
     values:
       - false
+  train_add_adv_examples:
+    distribution: categorical
+    values:
+      - false
+      - true
 program: Main.py
