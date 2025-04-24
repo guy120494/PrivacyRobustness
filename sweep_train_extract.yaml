@@ -45,15 +45,15 @@ parameters:
   problem:
     distribution: categorical
     values:
-      - mnist_odd_even
+      - 'cifar10_vehicles_animals'
   proj_name:
     distribution: categorical
     values:
-      - mnist_odd_even
+      - 'cifar10_vehicles_animals'
   run_mode:
     distribution: categorical
     values:
-      - train_reconstruct
+      - 'train_reconstruct'
   seed:
     distribution: categorical
     values:

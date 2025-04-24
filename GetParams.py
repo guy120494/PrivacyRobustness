@@ -25,7 +25,8 @@ def get_args(*args):
     parser.add_argument('--seed', default=1, type=int, help='')
     parser.add_argument('--proj_name', default='', help='description of run, for saving stuff')
     parser.add_argument('--precision', default='double', help='')
-    parser.add_argument('--run_mode', help='options: train, reconstruct', choices=['train', 'reconstruct'])
+    parser.add_argument('--run_mode', help='options: train, reconstruct',
+                        choices=['train', 'reconstruct', 'train_reconstruct'], default='train')
 
     # files
     # parser.add_argument('--datasets_dir', default='datasets', help='this is loaded from settings.py')
@@ -47,19 +48,21 @@ def get_args(*args):
     # data creation
     parser.add_argument('--problem', help='')
     parser.add_argument('--data_per_class_train', type=int, help='')
-    parser.add_argument('--data_per_class_val', default=0,type=int, help='')
+    parser.add_argument('--data_per_class_val', default=0, type=int, help='')
     parser.add_argument('--data_per_class_test', default=1000, type=int, help='')
     parser.add_argument('--data_reduce_mean', default='true', type=str2bool, help='')
 
     # model_train
     parser.add_argument('--model_type', default='mlp', help='options: mlp')
-    parser.add_argument('--model_hidden_list', default='[1000, 1000]', type=str2list, help='should be a list, even for one item. ')
+    parser.add_argument('--model_hidden_list', default='[1000, 1000]', type=str2list,
+                        help='should be a list, even for one item. ')
     parser.add_argument('--model_use_bias', default='true', type=str2bool, help='')
 
     # train
     parser.add_argument('--use_init_scale', default='true', type=str2bool, help='')
     parser.add_argument('--use_init_scale_only_first', default='true', type=str2bool, help='')
-    parser.add_argument('--model_init_list', default='[1e-01, 1e-01]', type=str2list, help='should be a list of the same size as model_hidden_list')
+    parser.add_argument('--model_init_list', default='[1e-01, 1e-01]', type=str2list,
+                        help='should be a list of the same size as model_hidden_list')
     parser.add_argument('--model_train_activation', default='relu', help='options: relu, sigmoid, leakyrelu, tanh')
     parser.add_argument('--train_epochs', default=1000, type=int, help='')
     parser.add_argument('--train_lr', default=0.01, type=float, help='')
@@ -76,7 +79,8 @@ def get_args(*args):
     # extraction
     parser.add_argument('--extraction_epochs', default=1000, type=int, help='')
     parser.add_argument('--extraction_data_amount_per_class', type=int, help='0 = same as data_amount')
-    parser.add_argument('--extraction_model_activation', default='modifiedrelu', help='options: same as model_train_activation')
+    parser.add_argument('--extraction_model_activation', default='modifiedrelu',
+                        help='options: same as model_train_activation')
     parser.add_argument('--extraction_model_relu_alpha', default=300, type=float, help='')
     parser.add_argument('--extraction_init_scale', default=1e-9, type=float, help='')
     parser.add_argument('--extraction_lr', default=1e-4, type=float, help='')
@@ -84,7 +88,8 @@ def get_args(*args):
     parser.add_argument('--extraction_lr_x', default=1e-4, type=float, help='')
     parser.add_argument('--extraction_lr_l', default=1e-4, type=float, help='')
     parser.add_argument('--extraction_evaluate_rate', default=250, type=int, help='')
-    parser.add_argument('--extraction_min_lambda', default=0.05, type=float, help='minimum lambda in the extraction loss')
+    parser.add_argument('--extraction_min_lambda', default=0.05, type=float,
+                        help='minimum lambda in the extraction loss')
     parser.add_argument('--extraction_loss_type', default='kkt', help='options: kkt, naive')
     parser.add_argument('--extraction_stop_threshold', default=5000, type=int)
     if not isinstance(args, list):
@@ -92,5 +97,3 @@ def get_args(*args):
     args = parser.parse_args(args)
 
     return args
-
-

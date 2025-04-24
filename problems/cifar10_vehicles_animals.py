@@ -92,7 +92,7 @@ def get_dataloader(args):
     args.output_dim = 1
     args.dataset = 'cifar10'
 
-    if args.run_mode == 'reconstruct':
+    if args.run_mode == 'reconstruct' or args.run_mode == 'train_reconstruct':
         args.extraction_data_amount = args.extraction_data_amount_per_class * args.num_classes
 
     # for legacy:
