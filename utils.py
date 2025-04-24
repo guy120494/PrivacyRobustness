@@ -1,5 +1,29 @@
 import torch
 
+from CreateModel import get_activation
+
+
+def replace_relu_with_modified_relu(args, model):
+    """
+    Replace all instances of nn.ReLU in a model with ModifiedReLU (threshold=300).
+
+    Args:
+        model (nn.Module): The PyTorch model to modify
+
+    Returns:
+        nn.Module: The modified model
+    """
+    for name, module in model.named_children():
+        # If the module is a ReLU
+        if isinstance(module, torch.nn.ReLU):
+            # Create and set the ModifiedReLU
+            setattr(model, name, get_activation(args.extraction_model_activation, args.extraction_model_relu_alpha))
+        # If the module has children, recursively process them
+        elif len(list(module.children())) > 0:
+            replace_relu_with_modified_relu(args, module)
+
+    return model
+
 
 def normalize_images(images, mean=None, std=None):
     """

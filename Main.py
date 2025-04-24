@@ -8,7 +8,7 @@ import torch
 import numpy as np
 import datetime
 import wandb
-from robustness.attacker import AttackerModel, Attacker
+from robustness.attacker import Attacker
 
 import common_utils
 from common_utils.common import AverageValueMeter, load_weights, now, save_weights
@@ -16,7 +16,7 @@ from CreateData import setup_problem
 from CreateModel import create_model
 from extraction import calc_extraction_loss, evaluate_extraction, get_trainable_params
 from GetParams import get_args
-from utils import normalize_images, unnormalize_images
+from utils import normalize_images, unnormalize_images, replace_relu_with_modified_relu
 
 thread_limit = threadpoolctl.threadpool_limits(limits=8)
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -322,6 +322,27 @@ def validate_settings_exists():
                             "adjusted according to your system")
 
 
+def train_and_extract(args, train_loader, test_loader, val_loader):
+    print('TRAIN AND EXTRACT')
+    print('START TRAINING')
+    model = create_model(args, extraction=False)
+    if args.wandb_active:
+        wandb.watch(model)
+
+    trained_model = train(args, train_loader, test_loader, val_loader, model)
+    error, accuracy = get_robustness_error_and_accuracy(args, model, train_loader)
+    if args.wandb_active:
+        wandb.log({"robustness error": error, "robustness accuracy": accuracy})
+    else:
+        print(f"robustness error: {error}")
+        print(f"robustness accuracy: {accuracy}")
+
+    print('START EXTRACTING')
+    trained_model = replace_relu_with_modified_relu(args, trained_model)
+    trained_model.eval()
+    data_extraction(args, train_loader, trained_model)
+
+
 def main():
     print(now(), 'STARTING!')
     validate_settings_exists()
@@ -348,6 +369,8 @@ def main():
     # reconstruct
     elif args.run_mode == 'reconstruct':
         main_reconstruct(args, train_loader)
+    elif args.run_mode == 'train_reconstruct':
+        train_and_extract(args, train_loader, test_loader, val_loader)
     else:
         raise ValueError(f'no such args.run_mode={args.run_mode}')
 
