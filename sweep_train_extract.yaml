@@ -152,6 +152,10 @@ parameters:
     distribution: categorical
     values:
       - false
+  extract_save_results_every:
+    distribution: categorical
+    values:
+      - 0
   train_add_adv_examples:
     distribution: categorical
     values:
