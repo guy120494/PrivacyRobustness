@@ -1,16 +1,15 @@
 import os
 import random
 import sys
-from collections import namedtuple
 
 import threadpoolctl
 import torch
 import numpy as np
 import datetime
 import wandb
-from robustness.attacker import Attacker
 
 import common_utils
+from adversarialTraining import get_adv_examples_madrylab, get_adv_examples_foolbox, get_adv_examples
 from common_utils.common import AverageValueMeter, load_weights, now, save_weights
 from CreateData import setup_problem
 from CreateModel import create_model
@@ -93,21 +92,6 @@ def epoch_ce(args, dataloader, model, epoch, device, opt=None):
     if args.data_reduce_mean:
         x = unnormalize_images(x, mean=args.mean, std=args.std)
     return total_err.avg, total_loss.avg, p.data, x
-
-
-def get_adv_examples(args, model, x, y):
-    def get_loss_for_adv_examples(model, x, y):
-        p = model(x)
-        p = p.view(-1)
-        loss = torch.nn.BCEWithLogitsLoss(reduction='none')(p, y)
-        return loss, None
-
-    MyDataset = namedtuple('MyDataset', 'mean std')
-    adv_model = Attacker(model, MyDataset(mean=args.mean, std=args.std))
-    adv_x = adv_model(x, y, should_normalize=args.data_reduce_mean, constraint="inf", eps=args.train_robust_radius,
-                      step_size=args.train_robust_lr, iterations=args.train_robust_epochs, do_tqdm=False,
-                      custom_loss=get_loss_for_adv_examples)
-    return adv_x
 
 
 def train(args, train_loader, test_loader, val_loader, model):
