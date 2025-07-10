@@ -1,6 +1,6 @@
 from collections import namedtuple
 import torch
-import foolbox as fb
+# import foolbox as fb
 import torch.nn.functional as F
 from robustness.attacker import Attacker
 
@@ -22,17 +22,17 @@ def get_adv_examples_madrylab(args, model, x, y):
     return adv_x
 
 
-def get_adv_examples_foolbox(args, model, x, y):
-    preprocessing = dict(mean=args.mean, std=args.std, axis=-3)
-    bounds = (0, 1)
-    if args.data_reduce_mean:
-        fmodel = fb.PyTorchModel(model, bounds=bounds, preprocessing=preprocessing)
-    else:
-        fmodel = fb.PyTorchModel(model, bounds=bounds, preprocessing=None)
-
-    attack = fb.attacks.L2AdamPGD(steps=args.train_robust_epochs)
-    _, clipped, _ = attack(fmodel, x, y, epsilons=args.train_robust_radius)
-    return clipped.detach()
+# def get_adv_examples_foolbox(args, model, x, y):
+#     preprocessing = dict(mean=args.mean, std=args.std, axis=-3)
+#     bounds = (0, 1)
+#     if args.data_reduce_mean:
+#         fmodel = fb.PyTorchModel(model, bounds=bounds, preprocessing=preprocessing)
+#     else:
+#         fmodel = fb.PyTorchModel(model, bounds=bounds, preprocessing=None)
+#
+#     attack = fb.attacks.L2AdamPGD(steps=args.train_robust_epochs)
+#     _, clipped, _ = attack(fmodel, x, y, epsilons=args.train_robust_radius)
+#     return clipped.detach()
 
 
 def get_adv_examples(args, model, x, y):

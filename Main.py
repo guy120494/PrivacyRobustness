@@ -9,7 +9,7 @@ import datetime
 import wandb
 
 import common_utils
-from adversarialTraining import get_adv_examples_madrylab, get_adv_examples_foolbox, get_adv_examples
+from adversarialTraining import get_adv_examples
 from common_utils.common import AverageValueMeter, load_weights, now, save_weights
 from CreateData import setup_problem
 from CreateModel import create_model
