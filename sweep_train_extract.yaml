@@ -62,7 +62,7 @@ parameters:
   train_epochs:
     distribution: categorical
     values:
-      - 100000
+      - 200000
   train_evaluate_rate:
     distribution: categorical
     values:
@@ -78,8 +78,7 @@ parameters:
   train_robust_epochs:
     distribution: categorical
     values:
-      - 20
-      - 10
+      - 2
   train_robust_lr:
     distribution: categorical
     values:
@@ -88,7 +87,6 @@ parameters:
     distribution: categorical
     values:
       - 0.1
-      - 0.01
   use_init_scale:
     distribution: categorical
     values:
