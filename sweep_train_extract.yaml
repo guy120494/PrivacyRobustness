@@ -57,7 +57,6 @@ parameters:
   seed:
     distribution: categorical
     values:
-      - 1
       - 42
   train_epochs:
     distribution: categorical
