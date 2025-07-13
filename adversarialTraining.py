@@ -89,6 +89,9 @@ def get_adv_examples(args, model, x, y):
         grad_norm = torch.linalg.vector_norm(grad_view, dim=1, keepdim=True)
         grad_view /= grad_norm + 1e-12
 
+        # Clear gradients to prevent memory accumulation
+        x_adv.grad.zero_()
+
         # Gradient step
         x_adv = x_adv + alpha_tensor * grad
 
