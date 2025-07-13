@@ -154,9 +154,14 @@ parameters:
     distribution: categorical
     values:
       - 0
+  extraction_min_lambda:
+    distribution: categorical
+    values:
+      - 0
+      - 0.01
+      - 0.05
   train_add_adv_examples:
     distribution: categorical
     values:
       - false
-      - true
 program: Main.py
