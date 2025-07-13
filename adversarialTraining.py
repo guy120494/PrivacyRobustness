@@ -35,42 +35,30 @@ def get_adv_examples_madrylab(args, model, x, y):
 #     return clipped.detach()
 
 
-def get_adv_examples(args, model, x, y):
+def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2"):
     """
-    Ultra-optimized L2 PGD Attack using advanced PyTorch features
+        Fast PGD attack implementation optimized for adversarial training.
+        Memory efficient with minimal overhead.
+        """
 
-    Additional optimizations:
-    1. torch.linalg.vector_norm for fastest norm computation
-    2. Fused operations where possible
-    3. Memory layout optimization
-    4. Reduced conditional branches
-    """
-    batch_size = x.size(0)
-    device = x.device
+    # Initialize adversarial examples
+    with torch.no_grad():
+        x_adv = x.clone()
 
-    # Use contiguous memory layout for better performance
-    x = x.contiguous()
+        # Random start within eps-ball
+        if norm_type == 'linf':
+            noise = torch.empty_like(x_adv).uniform_(-args.train_robust_radius, args.train_robust_radius)
+        elif norm_type == 'l2':
+            noise = torch.randn_like(x_adv)
+            # Normalize to eps-ball
+            noise_norm = noise.view(noise.size(0), -1).norm(p=2, dim=1, keepdim=True)
+            noise_norm = noise_norm.view(-1, 1, 1, 1)
+            noise = noise / (noise_norm + 1e-10) * args.train_robust_radius * torch.rand_like(noise_norm)
 
-    # INITIALIZATION with torch.linalg.vector_norm (fastest)
-    delta = torch.randn_like(x)
+        x_adv.add_(noise)
+        x_adv.clamp_(0, 1)
 
-    # Reshape for vectorized operations
-    delta_view = delta.view(batch_size, -1)
-    delta_norm = torch.linalg.vector_norm(delta_view, dim=1, keepdim=True)
-    delta_view /= delta_norm + 1e-12
-
-    # Random radius scaling
-    random_radius = torch.rand(batch_size, 1, device=device) * args.train_robust_radius
-    delta_view *= random_radius
-
-    # Initialize adversarial example
-    x_adv = torch.clamp(x + delta, 0, 1)
-
-    # Precompute constants
-    alpha_tensor = torch.tensor(0.01, device=device)
-    epsilon_tensor = torch.tensor(args.train_robust_radius, device=device)
-
-    # Main PGD loop
+    # PGD iterations
     for _ in range(args.train_robust_epochs):
         x_adv.requires_grad_(True)
 
@@ -81,31 +69,37 @@ def get_adv_examples(args, model, x, y):
         loss = F.cross_entropy(outputs.view(-1), y)
 
         # Backward pass
-        loss.backward()
+        grad = torch.autograd.grad(loss, x_adv, only_inputs=True)[0]
 
-        # Gradient processing
-        grad = x_adv.grad.data
-        grad_view = grad.view(batch_size, -1)
-        grad_norm = torch.linalg.vector_norm(grad_view, dim=1, keepdim=True)
-        grad_view /= grad_norm + 1e-12
+        # Normalize gradient
+        with torch.no_grad():
+            if grad_norm == 'sign':
+                grad_normalized = grad.sign()
+            elif grad_norm == 'l2':
+                grad_norm_val = grad.view(grad.size(0), -1).norm(p=2, dim=1, keepdim=True)
+                grad_norm_val = grad_norm_val.view(-1, 1, 1, 1)
+                grad_normalized = grad / (grad_norm_val + 1e-10)
+            elif grad_norm == 'linf':
+                grad_normalized = grad / (grad.abs().max() + 1e-10)
+            else:
+                raise ValueError(f"Unsupported grad_norm: {grad_norm}")
 
-        # Clear gradients to prevent memory accumulation
-        x_adv.grad.zero_()
+            # Update adversarial examples
+            x_adv.add_(0.01 * grad_normalized)
 
-        # Gradient step
-        x_adv = x_adv + alpha_tensor * grad
+            # Project back to eps-ball around original input
+            delta = x_adv - x
 
-        # L2 projection (vectorized)
-        delta = x_adv - x
-        delta_view = delta.view(batch_size, -1)
-        delta_norm = torch.linalg.vector_norm(delta_view, dim=1, keepdim=True)
+            if norm_type == 'linf':
+                delta.clamp_(-args.train_robust_radius, args.train_robust_radius)
+            elif norm_type == 'l2':
+                delta_norm = delta.view(delta.size(0), -1).norm(p=2, dim=1, keepdim=True)
+                delta_norm = delta_norm.view(-1, 1, 1, 1)
+                delta = delta / (delta_norm + 1e-10) * torch.clamp(delta_norm, max=args.train_robust_radius)
 
-        # Project to L2 ball
-        scale = torch.minimum(epsilon_tensor / (delta_norm + 1e-12),
-                              torch.ones_like(delta_norm))
-        delta_view *= scale
+            x_adv = x + delta
 
-        # Update and clamp
-        x_adv = torch.clamp(x + delta, 0, 1).detach()
+            # Clip to valid range
+            x_adv.clamp_(0, 1)
 
-    return x_adv
+    return x_adv.detach()
