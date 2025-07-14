@@ -85,7 +85,7 @@ def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2"):
                 raise ValueError(f"Unsupported grad_norm: {grad_norm}")
 
             # Update adversarial examples
-            x_adv.add_(0.01 * grad_normalized)
+            x_adv.add_(args.train_robust_lr * grad_normalized)
 
             # Project back to eps-ball around original input
             delta = x_adv - x
