@@ -287,10 +287,10 @@ def main_train(args, train_loader, test_loader, val_loader):
 
     test_robust_error, test_robust_accuracy = get_robustness_error_and_accuracy(args, model, test_loader)
     if args.wandb_active:
-        wandb.log({"train robustness error": test_robust_error, "train robustness accuracy": test_robust_accuracy})
+        wandb.log({"test robustness error": test_robust_error, "test robustness accuracy": test_robust_accuracy})
     else:
-        print(f"train robustness error: {test_robust_error}")
-        print(f"train robustness accuracy: {test_robust_accuracy}")
+        print(f"test robustness error: {test_robust_error}")
+        print(f"test robustness accuracy: {test_robust_accuracy}")
 
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
