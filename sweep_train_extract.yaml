@@ -77,7 +77,7 @@ parameters:
   train_robust_epochs:
     distribution: categorical
     values:
-      - 2
+      - 1
   train_robust_lr:
     distribution: categorical
     values:
