@@ -62,13 +62,13 @@ def get_total_err(args, p, y):
 #     return total_err.avg, total_loss.avg, p.data
 
 
-def epoch_ce(args, dataloader, model, epoch, device, opt=None):
+def epoch_ce(args, dataloader, model, device, opt=None, is_train=True):
     total_loss, total_err = AverageValueMeter(), AverageValueMeter()
     model.train()
     for i, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
 
-        if args.train_robust:
+        if is_train and args.train_robust:
             if args.train_add_adv_examples:
                 x_adv = get_adv_examples(args, model, x, y)
                 x = torch.cat([x, x_adv], dim=0)
@@ -106,12 +106,12 @@ def train(args, train_loader, test_loader, val_loader, model):
         # if args.train_SGD:
         #     train_error, train_loss, output = epoch_ce_sgd(args, train_loader, model, epoch, args.device, args.train_SGD_batch_size, optimizer)
         # else:
-        train_error, train_loss, output, x = epoch_ce(args, train_loader, model, epoch, args.device, optimizer)
+        train_error, train_loss, output, x = epoch_ce(args, train_loader, model, args.device, optimizer)
 
         if epoch % args.train_evaluate_rate == 0:
-            test_error, test_loss, _, _ = epoch_ce(args, test_loader, model, args.device, None, None)
+            test_error, test_loss, _, _ = epoch_ce(args, test_loader, model, args.device, None, False)
             if val_loader is not None:
-                validation_error, validation_loss, _, _ = epoch_ce(args, val_loader, model, args.device, None, None)
+                validation_error, validation_loss, _, _ = epoch_ce(args, val_loader, model, args.device, None, False)
                 print(now(),
                       f'Epoch {epoch}: train-loss = {train_loss:.8g} ; train-error = {train_error:.4g} ; test-loss = {test_loss:.8g} ; test-error = {test_error:.4g} ; validation-loss = {validation_loss:.8g} ; validation-error = {validation_error:.4g} ; p-std = {output.abs().std()}; p-val = {output.abs().mean()}')
             else:

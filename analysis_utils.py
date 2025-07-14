@@ -12,7 +12,8 @@ from CreateData import setup_problem
 from CreateModel import create_model
 
 
-def read_sweep(sweeps_dir, sweep_id, name=None, problem=None, wandb_entity='dataset_extraction', wandb_project_name='Dataset_Extraction'):
+def read_sweep(sweeps_dir, sweep_id, name=None, problem=None, wandb_entity='dataset_extraction',
+               wandb_project_name='Dataset_Extraction'):
     api = wandb.Api({'entity': wandb_entity})
     wandb_sweep = api.sweep(f'{wandb_entity}/{wandb_project_name}/{sweep_id}')
 
@@ -136,11 +137,13 @@ def sweep_get_data_model(sweep, verbose=True, run_train_test=False, put_in_sweep
     if run_train_test:
         train_loader = [(Xtrn, Ytrn)]
         test_loader = [(Xtst, Ytst)]
-        # compute train/test (reduce mean there..)
-        trn_error, trn_loss, trn_vals, _ = epoch_ce(args, train_loader, model, epoch=-1, device=args.device, opt=None)
-        if verbose: print('Train Error:', trn_error, trn_loss)
-        tst_error, tst_loss, tst_vals, _ = epoch_ce(args, test_loader, model, epoch=-1, device=args.device, opt=None)
-        if verbose: print('Test  Error:', tst_error, tst_loss)
+        # compute train/test (reduce mean there)
+        trn_error, trn_loss, trn_vals, _ = epoch_ce(args, train_loader, model, args.device, None)
+        if verbose:
+            print('Train Error:', trn_error, trn_loss)
+        tst_error, tst_loss, tst_vals, _ = epoch_ce(args, test_loader, model, args.device, None, False)
+        if verbose:
+            print('Test  Error:', tst_error, tst_loss)
         sweep.trn_error = trn_error
         sweep.trn_loss = trn_loss
         sweep.tst_error = tst_error
