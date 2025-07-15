@@ -278,14 +278,14 @@ def main_train(args, train_loader, test_loader, val_loader):
         wandb.watch(model)
 
     trained_model = train(args, train_loader, test_loader, val_loader, model)
-    train_robust_error, train_robust_accuracy = get_robustness_error_and_accuracy(args, model, train_loader)
+    train_robust_error, train_robust_accuracy = get_robustness_error_and_accuracy(args, trained_model, train_loader)
     if args.wandb_active:
         wandb.log({"train robustness error": train_robust_error, "train robustness accuracy": train_robust_accuracy})
     else:
         print(f"train robustness error: {train_robust_error}")
         print(f"train robustness accuracy: {train_robust_accuracy}")
 
-    test_robust_error, test_robust_accuracy = get_robustness_error_and_accuracy(args, model, test_loader)
+    test_robust_error, test_robust_accuracy = get_robustness_error_and_accuracy(args, trained_model, test_loader)
     if args.wandb_active:
         wandb.log({"test robustness error": test_robust_error, "test robustness accuracy": test_robust_accuracy})
     else:
@@ -322,13 +322,19 @@ def train_and_extract(args, train_loader, test_loader, val_loader):
         wandb.watch(model)
 
     trained_model = train(args, train_loader, test_loader, val_loader, model)
-    error, accuracy = get_robustness_error_and_accuracy(args, model, train_loader)
+    train_robust_error, train_robust_accuracy = get_robustness_error_and_accuracy(args, trained_model, train_loader)
     if args.wandb_active:
-        wandb.log({"robustness error": error, "robustness accuracy": accuracy})
+        wandb.log({"train robustness error": train_robust_error, "train robustness accuracy": train_robust_accuracy})
     else:
-        print(f"robustness error: {error}")
-        print(f"robustness accuracy: {accuracy}")
+        print(f"train robustness error: {train_robust_error}")
+        print(f"train robustness accuracy: {train_robust_accuracy}")
 
+    test_robust_error, test_robust_accuracy = get_robustness_error_and_accuracy(args, trained_model, test_loader)
+    if args.wandb_active:
+        wandb.log({"test robustness error": test_robust_error, "test robustness accuracy": test_robust_accuracy})
+    else:
+        print(f"test robustness error: {test_robust_error}")
+        print(f"test robustness accuracy: {test_robust_accuracy}")
     print('START EXTRACTING')
     trained_model = replace_relu_with_modified_relu(args, trained_model)
     trained_model.eval()
