@@ -35,25 +35,27 @@ def get_adv_examples_madrylab(args, model, x, y):
 #     return clipped.detach()
 
 
-def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2"):
+def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2", radius=None):
     """
         Fast PGD attack implementation optimized for adversarial training.
         Memory efficient with minimal overhead.
         """
 
     # Initialize adversarial examples
+    if radius is None:
+        radius = args.train_robust_radius
     with torch.no_grad():
         x_adv = x.clone()
 
         # Random start within eps-ball
         if norm_type == 'linf':
-            noise = torch.empty_like(x_adv).uniform_(-args.train_robust_radius, args.train_robust_radius)
+            noise = torch.empty_like(x_adv).uniform_(-radius, radius)
         elif norm_type == 'l2':
             noise = torch.randn_like(x_adv)
             # Normalize to eps-ball
             noise_norm = noise.view(noise.size(0), -1).norm(p=2, dim=1, keepdim=True)
             noise_norm = noise_norm.view(-1, 1, 1, 1)
-            noise = noise / (noise_norm + 1e-10) * args.train_robust_radius * torch.rand_like(noise_norm)
+            noise = noise / (noise_norm + 1e-10) * radius * torch.rand_like(noise_norm)
 
         x_adv.add_(noise)
         x_adv.clamp_(0, 1)
@@ -91,11 +93,11 @@ def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2"):
             delta = x_adv - x
 
             if norm_type == 'linf':
-                delta.clamp_(-args.train_robust_radius, args.train_robust_radius)
+                delta.clamp_(-radius, radius)
             elif norm_type == 'l2':
                 delta_norm = delta.view(delta.size(0), -1).norm(p=2, dim=1, keepdim=True)
                 delta_norm = delta_norm.view(-1, 1, 1, 1)
-                delta = delta / (delta_norm + 1e-10) * torch.clamp(delta_norm, max=args.train_robust_radius)
+                delta = delta / (delta_norm + 1e-10) * torch.clamp(delta_norm, max=radius)
 
             x_adv = x + delta
 

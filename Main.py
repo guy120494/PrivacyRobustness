@@ -261,7 +261,7 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     model.eval()
     for i, (x, y) in enumerate(train_loader):
         x, y = x.to(args.device), y.to(args.device)
-        x = get_adv_examples(args, model, x, y)
+        x = get_adv_examples(args, model, x, y, radius=0.5)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
         loss, p = get_loss_ce(args, model, x, y)
