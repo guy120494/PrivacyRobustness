@@ -41,9 +41,14 @@ def diversity_loss(x, min_dist):
 
 
 def get_trainable_params(args, x0):
-    n, c, h, w = x0.shape
-    x = torch.randn(args.extraction_data_amount, c, h, w).to(args.device) * args.extraction_init_scale
-    x.requires_grad_(True)
+    if args.extraction_random_init:
+        n, c, h, w = x0.shape
+        x = torch.randn(args.extraction_data_amount, c, h, w).to(
+            args.device) * args.extraction_init_scale + args.extraction_init_bias
+        x.requires_grad_(True)
+    else:
+        x = torch.clone(x0)
+        x.requires_grad_(False)
     l = torch.rand(args.extraction_data_amount, 1).to(args.device)
     l.requires_grad_(True)
     opt_x = torch.optim.SGD([x], lr=args.extraction_lr, momentum=0.9)
@@ -63,7 +68,8 @@ def get_kkt_loss(args, values, l, y, model):
     grad = torch.autograd.grad(
         outputs=output,
         inputs=model.parameters(),
-        grad_outputs=torch.ones_like(output, requires_grad=False, device=output.device).div(args.extraction_data_amount),
+        grad_outputs=torch.ones_like(output, requires_grad=False, device=output.device).div(
+            args.extraction_data_amount),
         create_graph=True,
         retain_graph=True,
     )
@@ -148,6 +154,7 @@ def evaluate_extraction(args, epoch, loss_extract, loss_verify, x, x0, y0, ds_me
             "extraction dssim": wandb.Image(dssim_grid),
         })
 
-    print(f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} verify={loss_verify.item():5.5g} grads={x_grad.abs().mean()} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
+    print(
+        f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} verify={loss_verify.item():5.5g} grads={x_grad.abs().mean()} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
 
     return extraction_score

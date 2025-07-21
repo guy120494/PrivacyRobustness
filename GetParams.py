@@ -83,6 +83,7 @@ def get_args(*args):
                         help='options: same as model_train_activation')
     parser.add_argument('--extraction_model_relu_alpha', default=300, type=float, help='')
     parser.add_argument('--extraction_init_scale', default=1e-9, type=float, help='')
+    parser.add_argument('--extraction_init_bias', default=0.0, type=float, help='')
     parser.add_argument('--extraction_lr', default=1e-4, type=float, help='')
     parser.add_argument('--extraction_lambda_lr', default=1e-4, type=float, help='')
     parser.add_argument('--extraction_lr_x', default=1e-4, type=float, help='')
@@ -92,6 +93,7 @@ def get_args(*args):
                         help='minimum lambda in the extraction loss')
     parser.add_argument('--extraction_loss_type', default='kkt', help='options: kkt, naive')
     parser.add_argument('--extraction_stop_threshold', default=5000, type=int)
+    parser.add_argument('--extraction_random_init', default='true', type=str2bool)
     if not isinstance(args, list):
         args = args[0]
     args = parser.parse_args(args)
