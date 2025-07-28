@@ -183,7 +183,7 @@ def data_extraction(args, dataset_loader, model):
     # extraction phase
     for epoch in range(args.extraction_epochs):
         values = model(x).squeeze()
-        loss, kkt_loss, loss_verify = calc_extraction_loss(args, l, model, values, x, y)
+        loss, kkt_loss, cos_sim, loss_verify = calc_extraction_loss(args, l, model, values, x, y)
         if np.isnan(kkt_loss.item()):
             raise ValueError('Optimizer diverged during extraction')
         opt_x.zero_grad()
@@ -193,7 +193,7 @@ def data_extraction(args, dataset_loader, model):
         opt_l.step()
 
         if epoch % args.extraction_evaluate_rate == 0:
-            extraction_score = evaluate_extraction(args, epoch, kkt_loss, loss_verify, x, x0, y0, ds_mean)
+            extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0, y0, ds_mean)
             if epoch >= args.extraction_stop_threshold and extraction_score > 3300:
                 print('Extraction Score is too low. Epoch:', epoch, 'Score:', extraction_score)
                 break

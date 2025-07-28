@@ -74,12 +74,25 @@ def get_kkt_loss(args, values, l, y, model):
         retain_graph=True,
     )
     kkt_loss = 0
-
+    all_params = []
+    all_grads = []
     for i, (p, grad) in enumerate(zip(model.parameters(), grads)):
         assert p.shape == grad.shape
         l = (p.detach().data - grad).pow(2).sum()
         kkt_loss += l
-    return kkt_loss
+
+        # Collect flattened tensors for cosine similarity
+        all_params.append(p.detach().data.flatten())
+        all_grads.append(grad.flatten())
+
+    all_params_flat = torch.cat(all_params)
+    all_grads_flat = torch.cat(all_grads)
+    cosine_sim = torch.nn.functional.cosine_similarity(
+        all_params_flat.unsqueeze(0),
+        all_grads_flat.unsqueeze(0),
+        dim=1
+    )
+    return kkt_loss, cosine_sim
 
 
 def get_verify_loss(args, x, l):
@@ -92,9 +105,9 @@ def get_verify_loss(args, x, l):
 
 
 def calc_extraction_loss(args, l, model, values, x, y):
-    kkt_loss, loss_verify = torch.tensor(0), torch.tensor(0)
+    kkt_loss, loss_verify, cos_sim = torch.tensor(0), torch.tensor(0), torch.tensor(-10)
     if args.extraction_loss_type == 'kkt':
-        kkt_loss = get_kkt_loss(args, values, l, y, model)
+        kkt_loss, cos_sim = get_kkt_loss(args, values, l, y, model)
         loss_verify = get_verify_loss(args, x, l)
         loss = kkt_loss + loss_verify
 
@@ -108,16 +121,17 @@ def calc_extraction_loss(args, l, model, values, x, y):
     else:
         raise ValueError(f'unknown args.extraction_loss_type={args.extraction_loss_type}')
 
-    return loss, kkt_loss, loss_verify
+    return loss, kkt_loss, cos_sim, loss_verify
 
 
-def evaluate_extraction(args, epoch, loss_extract, loss_verify, x, x0, y0, ds_mean):
+def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0, y0, ds_mean):
     x = x.clone().data
     if args.wandb_active:
         wandb.log({
             "extraction epoch": epoch,
             "loss extract": loss_extract,
             "loss verify": loss_verify,
+            "cosine similarity": cos_sim
         })
 
     xx = x.data.clone()
@@ -155,6 +169,6 @@ def evaluate_extraction(args, epoch, loss_extract, loss_verify, x, x0, y0, ds_me
 
     x_grad = x.grad.clone().data.abs().mean() if x.grad else None
     print(
-        f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} verify={loss_verify.item():5.5g} grads={x_grad} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
+        f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} cosine similarity={cos_sim.item():5.5g} verify={loss_verify.item():5.5g} grads={x_grad} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
 
     return extraction_score
