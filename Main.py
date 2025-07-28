@@ -162,7 +162,10 @@ def data_extraction(args, dataset_loader, model):
     #     send_input_data(args, model, x0, y0)
 
     # create labels (equal number of 1/-1)
-    y = torch.zeros(args.extraction_data_amount).type(torch.get_default_dtype()).to(args.device)
+    if args.extraction_random_init:
+        y = torch.zeros(args.extraction_data_amount).type(torch.get_default_dtype()).to(args.device)
+    else:
+        y = torch.zeros(x0.shape[0]).type(torch.get_default_dtype()).to(args.device)
     y[:y.shape[0] // 2] = -1
     y[y.shape[0] // 2:] = 1
     y = y.long()
