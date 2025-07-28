@@ -113,7 +113,6 @@ def calc_extraction_loss(args, l, model, values, x, y):
 
 
 def evaluate_extraction(args, epoch, loss_extract, loss_verify, x, x0, y0, ds_mean):
-    x_grad = x.grad.clone().data
     x = x.clone().data
     if args.wandb_active:
         wandb.log({
@@ -155,7 +154,8 @@ def evaluate_extraction(args, epoch, loss_extract, loss_verify, x, x0, y0, ds_me
             "extraction dssim": wandb.Image(dssim_grid),
         })
 
+    x_grad = x.grad.clone().data.abs().mean() if x.grad else None
     print(
-        f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} verify={loss_verify.item():5.5g} grads={x_grad.abs().mean()} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
+        f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} verify={loss_verify.item():5.5g} grads={x_grad} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
 
     return extraction_score
