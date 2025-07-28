@@ -66,17 +66,16 @@ def get_kkt_loss(args, values, l, y, model):
     assert values.shape == l.shape == y.shape
 
     output = values * l * y
-    grad = torch.autograd.grad(
+    grads = torch.autograd.grad(
         outputs=output,
         inputs=model.parameters(),
-        grad_outputs=torch.ones_like(output, requires_grad=False, device=output.device).div(
-            args.extraction_data_amount),
+        grad_outputs=torch.ones_like(output, requires_grad=False, device=output.device).div(values.shape[0]),
         create_graph=True,
         retain_graph=True,
     )
     kkt_loss = 0
 
-    for i, (p, grad) in enumerate(zip(model.parameters(), grad)):
+    for i, (p, grad) in enumerate(zip(model.parameters(), grads)):
         assert p.shape == grad.shape
         l = (p.detach().data - grad).pow(2).sum()
         kkt_loss += l
