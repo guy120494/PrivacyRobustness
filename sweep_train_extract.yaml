@@ -31,7 +31,6 @@ parameters:
     distribution: categorical
     values:
       - true
-      - false
   model_hidden_list:
     values:
       - "[1000, 1000]"
