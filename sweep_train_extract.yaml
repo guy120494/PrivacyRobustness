@@ -85,6 +85,7 @@ parameters:
       - 0.01
       - 0.1
       - 0.2
+      - 0.8
   use_init_scale:
     distribution: categorical
     values:
