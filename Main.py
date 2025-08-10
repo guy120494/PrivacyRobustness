@@ -154,8 +154,7 @@ def data_extraction(args, dataset_loader, model):
     print('y:', y0.shape, y0.device)
     print('model device:', model.layers[0].weight.device)
     if args.data_reduce_mean:
-        ds_mean = x0.mean(dim=0, keepdims=True)
-        x0 = x0 - ds_mean
+        x0 = normalize_images(x0, mean=args.mean, std=args.std)
 
     # # send inputs to wandb/notebook
     # if args.wandb_active:
@@ -193,7 +192,7 @@ def data_extraction(args, dataset_loader, model):
         opt_l.step()
 
         if epoch % args.extraction_evaluate_rate == 0:
-            extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0, y0, ds_mean)
+            extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0, y0, args.mean)
             if epoch >= args.extraction_stop_threshold and extraction_score > 3300:
                 print('Extraction Score is too low. Epoch:', epoch, 'Score:', extraction_score)
                 break
@@ -274,6 +273,29 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     return total_err.avg, total_acc.avg
 
 
+def get_margin(args, model, data_loader):
+    model.eval()
+    margin = float('inf')
+    for x, y in data_loader:
+        x, y = x.to(args.device), y.to(args.device)
+        if args.data_reduce_mean:
+            x = normalize_images(x, mean=args.mean, std=args.std)
+        if torch.min(y * model(x)).squeeze().cpu().item() < margin:
+            margin = torch.min(y * model(x)).squeeze().cpu().item()
+    return margin
+
+
+def get_distances_from_margin(args, margin, model, data_loader):
+    distances = []
+    model.eval()
+    for x, y in data_loader:
+        x, y = x.to(args.device), y.to(args.device)
+        if args.data_reduce_mean:
+            x = normalize_images(x, mean=args.mean, std=args.std)
+        distances.append((y * model(x)).squeeze().cpu().item() - margin)
+    return torch.cat(distances, dim=0)
+
+
 def main_train(args, train_loader, test_loader, val_loader):
     print('TRAINING A MODEL')
     model = create_model(args, extraction=False)
@@ -294,6 +316,15 @@ def main_train(args, train_loader, test_loader, val_loader):
     else:
         print(f"test robustness error: {test_robust_error}")
         print(f"test robustness accuracy: {test_robust_accuracy}")
+
+    if args.wandb_active:
+        margin = get_margin(args, trained_model, train_loader)
+        distances = get_distances_from_margin(args, margin, trained_model, train_loader)
+        wandb.log({"margin": margin, "min distance from margin": torch.min(distances).cpu().squeeze().item(),
+                   "average distance from margin": torch.mean(distances).cpu().squeeze().item(),
+                   "max distance from margin": torch.max(distances).cpu().squeeze().item(),
+                   "number of points with minimum distance": (
+                               distances == distances.min()).sum().cpu().squeeze().item()})
 
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
