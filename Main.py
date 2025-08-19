@@ -292,7 +292,7 @@ def get_distances_from_margin(args, margin, model, data_loader):
         x, y = x.to(args.device), y.to(args.device)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
-        distances.append((y * model(x)).squeeze().cpu().item() - margin)
+        distances.append((y * model(x)).squeeze().cpu() - margin)
     return torch.cat(distances, dim=0)
 
 
