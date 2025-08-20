@@ -5,6 +5,7 @@ import wandb
 from common_utils.common import now
 from CreateModel import Flatten
 from evaluations import get_evaluation_score_dssim, viz_nns
+from utils import unnormalize_images
 
 
 def l2_dist(x, y):
@@ -124,7 +125,7 @@ def calc_extraction_loss(args, l, model, values, x, y):
     return loss, kkt_loss, cos_sim, loss_verify
 
 
-def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0, y0, ds_mean):
+def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
     x = x.clone().data
     if args.wandb_active:
         wandb.log({
@@ -145,8 +146,8 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0, 
     _, v = viz_nns(xx, yy, max_per_nn=1, metric=metric)
     extraction_score = v[:10].mean().item()
 
-    xx += ds_mean
-    yy += ds_mean
+    xx = unnormalize_images(xx, mean=args.mean, std=args.std)
+    yy = unnormalize_images(yy, mean=args.mean, std=args.std)
     qq, _ = viz_nns(xx, yy, max_per_nn=4, metric=metric)
     extraction_grid_with_mean = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=10)
     _, v = viz_nns(xx, yy, max_per_nn=1, metric=metric)
@@ -155,7 +156,7 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0, 
     # SSIM EVALUATION
     xx = x.data.clone()
     yy = x0.clone()
-    dssim_score, dssim_grid = get_evaluation_score_dssim(xx, yy, ds_mean, vote=None, show=False)
+    dssim_score, dssim_grid = get_evaluation_score_dssim(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False)
 
     if args.wandb_active:
         wandb.log({

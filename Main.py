@@ -192,7 +192,7 @@ def data_extraction(args, dataset_loader, model):
         opt_l.step()
 
         if epoch % args.extraction_evaluate_rate == 0:
-            extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0, y0, args.mean)
+            extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0)
             if epoch >= args.extraction_stop_threshold and extraction_score > 3300:
                 print('Extraction Score is too low. Epoch:', epoch, 'Score:', extraction_score)
                 break
@@ -278,10 +278,12 @@ def get_margin(args, model, data_loader):
     margin = float('inf')
     for x, y in data_loader:
         x, y = x.to(args.device), y.to(args.device)
+        y = 2 * y - 1
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
-        if torch.min(y * model(x)).squeeze().cpu().item() < margin:
-            margin = torch.min(y * model(x)).squeeze().cpu().item()
+        candidate_for_margin = torch.min(y * model(x).squeeze()).squeeze().cpu().item()
+        if candidate_for_margin < margin:
+            margin = candidate_for_margin
     return margin
 
 
@@ -290,9 +292,10 @@ def get_distances_from_margin(args, margin, model, data_loader):
     model.eval()
     for x, y in data_loader:
         x, y = x.to(args.device), y.to(args.device)
+        y = 2 * y - 1
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
-        distances.append(((2 * y - 1) * model(x).squeeze()).squeeze().cpu() - margin)
+        distances.append((y * model(x).squeeze()).squeeze().cpu() - margin)
     return torch.cat(distances, dim=0)
 
 
