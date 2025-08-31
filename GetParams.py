@@ -73,6 +73,7 @@ def get_args(*args):
     parser.add_argument('--train_robust', default='true', type=str2bool, help='')
     parser.add_argument('--train_robust_epochs', default=40, type=int, help='')
     parser.add_argument('--train_robust_radius', default=0.3, type=float, help='')
+    parser.add_argument('--train_weight_decay', default=0.0, type=float, help='')
     parser.add_argument('--train_add_adv_examples', default='false', type=str2bool, help='')
 
     # extraction

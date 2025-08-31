@@ -67,6 +67,12 @@ parameters:
     distribution: categorical
     values:
       - 0.1
+  train_weight_decay:
+    distribution: categorical
+    values:
+      - 0.0
+      - 0.00001
+      - 0.0001
   train_robust:
     distribution: categorical
     values:
@@ -119,13 +125,12 @@ parameters:
   extraction_lr:
     distribution: categorical
     values:
-      - 1
-      - 0.5
+      - 0.01
       - 0.1
+      - 0.5
   extraction_lambda_lr:
     distribution: categorical
     values:
-      - 0.1
       - 0.01
   extraction_model_relu_alpha:
     distribution: categorical
@@ -135,7 +140,6 @@ parameters:
     distribution: categorical
     values:
       - 0.004
-      - 0.0008
   extraction_data_amount_per_class:
     distribution: categorical
     values:
