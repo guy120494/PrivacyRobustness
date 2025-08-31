@@ -82,10 +82,6 @@ parameters:
       - 25
       - 20
       - 10
-  train_robust_lr:
-    distribution: categorical
-    values:
-      - 0.1
   train_robust_radius:
     distribution: categorical
     values:
