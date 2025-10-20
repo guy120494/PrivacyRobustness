@@ -153,6 +153,12 @@ def data_extraction(args, dataset_loader, model):
     print('X:', x0.shape, x0.device)
     print('y:', y0.shape, y0.device)
     print('model device:', model.layers[0].weight.device)
+
+    if "mean" not in args:
+        args.mean = x0.mean(dim=[0, -2, -1]).detach()
+        # args.std = x.std(dim=[0, -2, -1]).detach()
+        args.std = torch.ones_like(x0.mean(dim=[0, -2, -1])).detach()  # Should work better with KKT
+
     if args.data_reduce_mean:
         x0 = normalize_images(x0, mean=args.mean, std=args.std)
 
