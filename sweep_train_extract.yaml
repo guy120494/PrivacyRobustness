@@ -132,6 +132,23 @@ parameters:
     distribution: categorical
     values:
       - 0.01
+  extraction_alpha_prior:
+    distribution: categorical
+    values:
+      - 0.1
+      - 0.5
+      - 1
+  extraction_alpha_positive_lambdas:
+    distribution: categorical
+    values:
+      - 1
+      - 5
+  extraction_alpha_kkt:
+    distribution: categorical
+    values:
+      - 1
+      - 2
+      - 5
   extraction_model_relu_alpha:
     distribution: categorical
     values:

@@ -94,6 +94,9 @@ def get_args(*args):
     parser.add_argument('--extraction_loss_type', default='kkt', help='options: kkt, naive')
     parser.add_argument('--extraction_stop_threshold', default=5000, type=int)
     parser.add_argument('--extraction_random_init', default='true', type=str2bool)
+    parser.add_argument('--extraction_alpha_prior', default=1.0, type=float)
+    parser.add_argument('--extraction_alpha_positive_lambdas', default=5.0, type=float)
+    parser.add_argument('--extraction_alpha_kkt', default=1.0, type=float)
     if not isinstance(args, list):
         args = args[0]
     args = parser.parse_args(args)

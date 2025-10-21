@@ -98,9 +98,9 @@ def get_kkt_loss(args, values, l, y, model):
 
 def get_verify_loss(args, x, l):
     loss_verify = 0
-    loss_verify += 1 * (x - 1).relu().pow(2).sum()
-    loss_verify += 1 * (-1 - x).relu().pow(2).sum()
-    loss_verify += 5 * (-l + args.extraction_min_lambda).relu().pow(2).sum()
+    loss_verify += args.extraction_alpha_prior * (x - 1).relu().pow(2).sum()
+    loss_verify += args.extraction_alpha_prior * (-1 - x).relu().pow(2).sum()
+    loss_verify += args.extraction_alpha_positive_lambdas * (-l + args.extraction_min_lambda).relu().pow(2).sum()
 
     return loss_verify
 
@@ -110,7 +110,7 @@ def calc_extraction_loss(args, l, model, values, x, y):
     if args.extraction_loss_type == 'kkt':
         kkt_loss, cos_sim = get_kkt_loss(args, values, l, y, model)
         loss_verify = get_verify_loss(args, x, l)
-        loss = kkt_loss + loss_verify
+        loss = args.extraction_alpha_kkt * kkt_loss + loss_verify
 
     elif args.extraction_loss_type == 'naive':
         loss_naive = -(values[y == 1].mean() - values[y == -1].mean())
