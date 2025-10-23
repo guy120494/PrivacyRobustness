@@ -1,0 +1,178 @@
+method: random
+metric:
+  goal: minimize
+  name: loss
+parameters:
+  cuda:
+    distribution: categorical
+    values:
+      - true
+  data_per_class_test:
+    distribution: categorical
+    values:
+      - 1000
+  data_per_class_train:
+    distribution: categorical
+    values:
+      - 250
+  data_reduce_mean:
+    distribution: categorical
+    values:
+      - true
+  model_train_activation:
+    distribution: categorical
+    values:
+      - "relu"
+  model_type:
+    distribution: categorical
+    values:
+      - mlp
+  model_use_bias:
+    distribution: categorical
+    values:
+      - true
+  model_hidden_list:
+    values:
+      - "[1000, 1000]"
+    distribution: categorical
+  precision:
+    distribution: categorical
+    values:
+      - double
+  problem:
+    distribution: categorical
+    values:
+      - 'sphere'
+  proj_name:
+    distribution: categorical
+    values:
+      - 'sphere'
+  run_mode:
+    distribution: categorical
+    values:
+      - 'train_reconstruct'
+  seed:
+    distribution: categorical
+    values:
+      - 42
+  train_epochs:
+    distribution: categorical
+    values:
+      - 100000
+  train_evaluate_rate:
+    distribution: categorical
+    values:
+      - 500
+  train_lr:
+    distribution: categorical
+    values:
+      - 0.1
+  train_weight_decay:
+    distribution: categorical
+    values:
+      - 0.0
+  train_robust:
+    distribution: categorical
+    values:
+      - true
+  train_robust_epochs:
+    distribution: categorical
+    values:
+      - 1
+  train_robust_radius:
+    distribution: categorical
+    values:
+      - 0.01
+      - 0.1
+      - 0.2
+      - 0.8
+      - 1.5
+      - 5
+  use_init_scale:
+    distribution: categorical
+    values:
+      - true
+  model_init_list:
+    distribution: categorical
+    values:
+      - "[0.0001, 0.0001]"
+  wandb_active:
+    distribution: categorical
+    values:
+      - true
+  wandb_project_name:
+    distribution: categorical
+    values:
+      - Dataset_Extraction
+  save_args_files:
+    distribution: categorical
+    values:
+      - false
+  train_save_model:
+    distribution: categorical
+    values:
+      - false
+  extraction_model_activation:
+    distribution: categorical
+    values:
+      - "modifiedrelu"
+  extraction_epochs:
+    distribution: categorical
+    values:
+      - 50000
+  extraction_lr:
+    distribution: categorical
+    values:
+      - 0.01
+      - 0.1
+      - 0.5
+  extraction_lambda_lr:
+    distribution: categorical
+    values:
+      - 0.01
+  extraction_alpha_prior:
+    distribution: categorical
+    values:
+      - 0.1
+      - 0.5
+      - 1
+  extraction_alpha_positive_lambdas:
+    distribution: categorical
+    values:
+      - 1
+      - 5
+  extraction_alpha_kkt:
+    distribution: categorical
+    values:
+      - 1
+      - 2
+      - 5
+  extraction_model_relu_alpha:
+    distribution: categorical
+    values:
+      - 20
+  extraction_init_scale:
+    distribution: categorical
+    values:
+      - 0.004
+  extraction_data_amount_per_class:
+    distribution: categorical
+    values:
+      - 500
+  extract_save_results:
+    distribution: categorical
+    values:
+      - false
+  extract_save_results_every:
+    distribution: categorical
+    values:
+      - 0
+  extraction_min_lambda:
+    distribution: categorical
+    values:
+      - 0.5
+  train_add_adv_examples:
+    distribution: categorical
+    values:
+      - false
+program: Main.py
