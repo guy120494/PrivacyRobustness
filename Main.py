@@ -122,12 +122,13 @@ def train(args, train_loader, test_loader, val_loader, model):
             if args.wandb_active:
                 wandb.log(
                     {"epoch": epoch, "train loss": train_loss, 'train error': train_error, 'p-val': output.abs().mean(),
-                     'p-std': output.abs().std(),
-                     'adversarial images': wandb.Image(
-                         x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy().transpose([1, 2, 0]),
-                         caption=f'Adversarial')})
+                     'p-std': output.abs().std()})
                 if val_loader is not None:
                     wandb.log({'validation loss': validation_loss, 'validation error': validation_error})
+                if len(x.shape) > 2:
+                    wandb.log({'adversarial images': wandb.Image(
+                         x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy().transpose([1, 2, 0]),
+                         caption=f'Adversarial')})
                 wandb.log({'test loss': test_loss, 'test error': test_error})
 
         if np.isnan(train_loss):
