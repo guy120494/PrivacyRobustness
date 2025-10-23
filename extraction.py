@@ -43,8 +43,8 @@ def diversity_loss(x, min_dist):
 
 def get_trainable_params(args, x0):
     if args.extraction_random_init:
-        n, c, h, w = x0.shape
-        x = torch.randn(args.extraction_data_amount, c, h, w).to(
+        sample_shape = x0.shape[1:]
+        x = torch.randn(args.extraction_data_amount, *sample_shape).to(
             args.device) * args.extraction_init_scale + args.extraction_init_bias
         x.requires_grad_(True)
         l = torch.rand(args.extraction_data_amount, 1).to(args.device)
@@ -141,35 +141,43 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
     if args.dataset == 'mnist':
         metric = 'l2'
 
-    qq, _ = viz_nns(xx, yy, max_per_nn=4, metric=metric)
-    extraction_grid = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=10)
-    _, v = viz_nns(xx, yy, max_per_nn=1, metric=metric)
-    extraction_score = v[:10].mean().item()
+    if args.problem != "sphere":
+        qq, _ = viz_nns(xx, yy, max_per_nn=4, metric=metric)
+        extraction_grid = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=10)
+        _, v = viz_nns(xx, yy, max_per_nn=1, metric=metric)
+        extraction_score = v[:10].mean().item()
 
-    xx = unnormalize_images(xx, mean=args.mean, std=args.std)
-    yy = unnormalize_images(yy, mean=args.mean, std=args.std)
-    qq, _ = viz_nns(xx, yy, max_per_nn=4, metric=metric)
-    extraction_grid_with_mean = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=10)
-    _, v = viz_nns(xx, yy, max_per_nn=1, metric=metric)
-    extraction_score_with_mean = v[:10].mean().item()
+        xx = unnormalize_images(xx, mean=args.mean, std=args.std)
+        yy = unnormalize_images(yy, mean=args.mean, std=args.std)
+        qq, _ = viz_nns(xx, yy, max_per_nn=4, metric=metric)
+        extraction_grid_with_mean = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=10)
+        _, v = viz_nns(xx, yy, max_per_nn=1, metric=metric)
+        extraction_score_with_mean = v[:10].mean().item()
 
-    # SSIM EVALUATION
-    xx = x.data.clone()
-    yy = x0.clone()
-    dssim_score, dssim_grid = get_evaluation_score_dssim(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False)
+        # SSIM EVALUATION
+        xx = x.data.clone()
+        yy = x0.clone()
+        dssim_score, dssim_grid = get_evaluation_score_dssim(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False)
 
-    if args.wandb_active:
-        wandb.log({
-            "extraction": wandb.Image(extraction_grid),
-            "extraction score": extraction_score,
-            "extraction with mean": wandb.Image(extraction_grid_with_mean),
-            "extraction score with mean": extraction_score_with_mean,
-            "dssim score": dssim_score,
-            "extraction dssim": wandb.Image(dssim_grid),
-        })
-
-    x_grad = x.grad.clone().data.abs().mean() if x.grad else None
-    print(
-        f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} cosine similarity={cos_sim.item():5.5g} verify={loss_verify.item():5.5g} grads={x_grad} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
+        if args.wandb_active:
+            wandb.log({
+                "extraction": wandb.Image(extraction_grid),
+                "extraction score": extraction_score,
+                "extraction with mean": wandb.Image(extraction_grid_with_mean),
+                "extraction score with mean": extraction_score_with_mean,
+                "dssim score": dssim_score,
+                "extraction dssim": wandb.Image(dssim_grid),
+            })
+        x_grad = x.grad.clone().data.abs().mean() if x.grad else None
+        print(
+            f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} cosine similarity={cos_sim.item():5.5g} verify={loss_verify.item():5.5g} grads={x_grad} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
+    else:
+        _, v = viz_nns(xx, yy, max_per_nn=4, metric='l2')
+        extraction_score = v[:10].mean().item()
+        if args.wandb_active:
+            wandb.log({"extraction mean distance": extraction_score})
+        x_grad = x.grad.clone().data.abs().mean() if x.grad else None
+        print(
+            f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} cosine similarity={cos_sim.item():5.5g} verify={loss_verify.item():5.5g} grads={x_grad} distance={extraction_score}')
 
     return extraction_score

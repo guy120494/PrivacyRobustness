@@ -99,9 +99,10 @@ def train(args, train_loader, test_loader, val_loader, model):
     print('Model:')
     print(model)
     x, _ = next(iter(train_loader))
-    args.mean = x.mean(dim=[0, -2, -1]).detach()
-    # args.std = x.std(dim=[0, -2, -1]).detach()
-    args.std = torch.ones_like(x.mean(dim=[0, -2, -1])).detach()  # Should work better with KKT
+    if args.data_reduce_mean:
+        args.mean = x.mean(dim=[0, -2, -1]).detach()
+        # args.std = x.std(dim=[0, -2, -1]).detach()
+        args.std = torch.ones_like(x.mean(dim=[0, -2, -1])).detach()  # Should work better with KKT
     for epoch in range(args.train_epochs + 1):
         # if args.train_SGD:
         #     train_error, train_loss, output = epoch_ce_sgd(args, train_loader, model, epoch, args.device, args.train_SGD_batch_size, optimizer)
@@ -154,7 +155,7 @@ def data_extraction(args, dataset_loader, model):
     print('y:', y0.shape, y0.device)
     print('model device:', model.layers[0].weight.device)
 
-    if "mean" not in args:
+    if args.data_reduce_mean and "mean" not in args:
         args.mean = x0.mean(dim=[0, -2, -1]).detach()
         # args.std = x.std(dim=[0, -2, -1]).detach()
         args.std = torch.ones_like(x0.mean(dim=[0, -2, -1])).detach()  # Should work better with KKT

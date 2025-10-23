@@ -54,11 +54,13 @@ def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2", radius=N
             noise = torch.randn_like(x_adv)
             # Normalize to eps-ball
             noise_norm = noise.view(noise.size(0), -1).norm(p=2, dim=1, keepdim=True)
-            noise_norm = noise_norm.view(-1, 1, 1, 1)
+            if len(noise_norm.shape) != len(noise.shape):
+                noise_norm = noise_norm.view(-1, 1, 1, 1)
             noise = noise / (noise_norm + 1e-10) * radius * torch.rand_like(noise_norm)
 
         x_adv.add_(noise)
-        x_adv.clamp_(0, 1)
+        if args.problem != "sphere":
+            x_adv.clamp_(0, 1)
 
     # PGD iterations
     for _ in range(args.train_robust_epochs):
@@ -79,7 +81,8 @@ def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2", radius=N
                 grad_normalized = grad.sign()
             elif grad_norm == 'l2':
                 grad_norm_val = grad.view(grad.size(0), -1).norm(p=2, dim=1, keepdim=True)
-                grad_norm_val = grad_norm_val.view(-1, 1, 1, 1)
+                if len(grad_norm_val.shape) != len(grad.shape):
+                    grad_norm_val = grad_norm_val.view(-1, 1, 1, 1)
                 grad_normalized = grad / (grad_norm_val + 1e-10)
             elif grad_norm == 'linf':
                 grad_normalized = grad / (grad.abs().max() + 1e-10)
@@ -96,12 +99,14 @@ def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2", radius=N
                 delta.clamp_(-radius, radius)
             elif norm_type == 'l2':
                 delta_norm = delta.view(delta.size(0), -1).norm(p=2, dim=1, keepdim=True)
-                delta_norm = delta_norm.view(-1, 1, 1, 1)
+                if len(delta_norm.shape) != len(delta.shape):
+                    delta_norm = delta_norm.view(-1, 1, 1, 1)
                 delta = delta / (delta_norm + 1e-10) * torch.clamp(delta_norm, max=radius)
 
             x_adv = x + delta
 
             # Clip to valid range
-            x_adv.clamp_(0, 1)
+            if args.problem != "sphere":
+                x_adv.clamp_(0, 1)
 
     return x_adv.detach()

@@ -8,6 +8,9 @@ def setup_problem(args):
     elif args.problem == 'mnist_odd_even':
         from problems.mnist_odd_even import get_dataloader
         return get_dataloader(args)
+    elif args.problem == 'sphere':
+        from problems.sphere import get_dataloader
+        return get_dataloader(args)
     else:
         raise ValueError(f'Unknown args.problem={args.problem}')
     return data_loader
