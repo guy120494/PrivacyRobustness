@@ -58,7 +58,7 @@ parameters:
   train_epochs:
     distribution: categorical
     values:
-      - 100000
+      - 150000
   train_evaluate_rate:
     distribution: categorical
     values:
@@ -133,9 +133,7 @@ parameters:
   extraction_alpha_prior:
     distribution: categorical
     values:
-      - 0.1
-      - 0.5
-      - 1
+      - 0
   extraction_alpha_positive_lambdas:
     distribution: categorical
     values:
