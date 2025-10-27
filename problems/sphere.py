@@ -30,8 +30,8 @@ def get_dataloader(args):
         total_amount = args.data_amount + args.data_test_amount
         X = torch.randn(total_amount, args.input_dim, device=args.device)
 
-        # Step 2: Normalize to have unit norm (i.e., project to the unit sphere)
-        X = X / X.norm(dim=1, keepdim=True)
+        # Step 2: Normalize to have unit norm (i.e., project to the unit sphere) and multiply by input_dim to have input_dim radius
+        X = X / X.norm(dim=1, keepdim=True) * args.input_dim
 
         # Step 3: Compute XOR of sign bits
         # sign(x) > 0 => 1, sign(x) < 0 => 0

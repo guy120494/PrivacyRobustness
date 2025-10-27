@@ -58,7 +58,7 @@ parameters:
   train_epochs:
     distribution: categorical
     values:
-      - 150000
+      - 350000
   train_evaluate_rate:
     distribution: categorical
     values:
@@ -86,8 +86,6 @@ parameters:
       - 0.1
       - 0.2
       - 0.8
-      - 1.5
-      - 5
   use_init_scale:
     distribution: categorical
     values:
