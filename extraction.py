@@ -102,7 +102,7 @@ def get_verify_loss(args, x, l):
         loss_verify += args.extraction_alpha_prior * (x - 1).relu().pow(2).sum()
         loss_verify += args.extraction_alpha_prior * (-1 - x).relu().pow(2).sum()
     else:
-        loss_verify += args.extraction_alpha_prior * ((torch.linalg.vector_norm(x, dim=1) - args.input_dim) ** 2).sum()
+        loss_verify += args.extraction_alpha_prior * (torch.linalg.vector_norm(x, dim=1) - args.input_dim).pow(2).sum()
     loss_verify += args.extraction_alpha_positive_lambdas * (-l + args.extraction_min_lambda).relu().pow(2).sum()
 
     return loss_verify
