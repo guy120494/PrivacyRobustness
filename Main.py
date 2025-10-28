@@ -201,7 +201,7 @@ def data_extraction(args, dataset_loader, model):
 
         if epoch % args.extraction_evaluate_rate == 0:
             extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0)
-            if epoch >= args.extraction_stop_threshold and extraction_score > 3300:
+            if epoch >= args.extraction_stop_threshold and extraction_score > 3300 and args.problem != "sphere":
                 print('Extraction Score is too low. Epoch:', epoch, 'Score:', extraction_score)
                 break
 
