@@ -127,8 +127,8 @@ def train(args, train_loader, test_loader, val_loader, model):
                     wandb.log({'validation loss': validation_loss, 'validation error': validation_error})
                 if len(x.shape) > 2:
                     wandb.log({'adversarial images': wandb.Image(
-                         x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy().transpose([1, 2, 0]),
-                         caption=f'Adversarial')})
+                        x[random.randint(0, args.data_amount - 1)].detach().cpu().numpy().transpose([1, 2, 0]),
+                        caption=f'Adversarial')})
                 wandb.log({'test loss': test_loss, 'test error': test_error})
 
         if np.isnan(train_loss):
@@ -206,20 +206,24 @@ def data_extraction(args, dataset_loader, model):
                 break
 
         # send extraction output to wandb
-        if (args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0) \
-                or (args.extract_save_results and epoch % args.extraction_evaluate_rate == 0):
-            torch.save(x, os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'))
-            torch.save(l, os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'))
-            if args.wandb_active:
-                wandb.save(os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'), base_path=args.wandb_base_path)
-                wandb.save(os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'), base_path=args.wandb_base_path)
+        # if (args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0) \
+        #         or (args.extract_save_results and epoch % args.extraction_evaluate_rate == 0):
+        #     torch.save(x, os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'))
+        #     torch.save(l, os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'))
+        #     if args.wandb_active:
+        #         wandb.save(os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'), base_path=args.wandb_base_path)
+        #         wandb.save(os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'), base_path=args.wandb_base_path)
+
+    if args.extract_save_results:
+        torch.save(x, os.path.join(args.output_dir, 'x', f'x_final.pth'))
+        torch.save(l, os.path.join(args.output_dir, 'l', f'l_final.pth'))
 
 
 ###############################################################################
 #                               MAIN                                          #
 ###############################################################################
 def create_dirs_save_files(args):
-    if args.train_save_model or args.extract_save_results or args.extract_save_results:
+    if args.train_save_model or args.extract_save_results:
         # create dirs
         os.makedirs(os.path.join(args.output_dir, 'weights'), exist_ok=True)
         os.makedirs(os.path.join(args.output_dir, 'x'), exist_ok=True)
@@ -251,13 +255,13 @@ def setup_args(args):
         wandb.init(project=args.wandb_project_name, entity=args.wandb_entity)
         wandb.config.update(args)
 
-    if args.wandb_active:
+    if args.wandb_active and False:
         args.output_dir = wandb.run.dir
     else:
         import dateutil.tz
         timestamp = datetime.datetime.now(dateutil.tz.tzlocal()).strftime('%Y_%m_%d_%H_%M_%S')
         run_name = f'{timestamp}_{np.random.randint(1e5, 1e6)}_{args.model_name}'
-        args.output_dir = os.path.join(args.results_base_dir, run_name)
+        args.output_dir = os.path.join(args.results_base_dir, args.model_name, run_name)
     print('OUTPUT_DIR:', args.output_dir)
 
     args.wandb_base_path = './'
@@ -335,7 +339,7 @@ def main_train(args, train_loader, test_loader, val_loader):
                    "average distance from margin": torch.mean(distances).cpu().squeeze().item(),
                    "max distance from margin": torch.max(distances).cpu().squeeze().item(),
                    "number of points with minimum distance": (
-                               distances == distances.min()).sum().cpu().squeeze().item()})
+                           distances == distances.min()).sum().cpu().squeeze().item()})
 
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
