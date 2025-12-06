@@ -249,7 +249,7 @@ def setup_args(args):
     if args.proj_name:
         args.model_name += f'_{args.proj_name}'
     if args.pretrained_model_path:
-        args.model_name = os.path.basename(args.pretrained_model_path).replace('weights-', '')
+        args.model_name = os.path.basename(args.pretrained_model_path)
         args.model_name = os.path.splitext(args.model_name)[0]
 
     torch.manual_seed(args.seed)
