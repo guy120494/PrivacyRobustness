@@ -248,6 +248,8 @@ def setup_args(args):
     args.model_name = f'{args.problem}_d{args.data_per_class_train}'
     if args.proj_name:
         args.model_name += f'_{args.proj_name}'
+    if args.train_robust:
+        args.model_name += f'_robust_radius_{args.train_robust_radius}'
 
     torch.manual_seed(args.seed)
 
