@@ -1,4 +1,4 @@
-method: random
+method: grid
 metric:
   goal: minimize
   name: loss
@@ -34,11 +34,11 @@ parameters:
   problem:
     distribution: categorical
     values:
-      - mnist_odd_even
+      - cifar10_vehicles_animals
   proj_name:
     distribution: categorical
     values:
-      - mnist_odd_even
+      - cifar10_vehicles_animals
   run_mode:
     distribution: categorical
     values:
@@ -98,8 +98,7 @@ parameters:
   extraction_epochs:
     distribution: categorical
     values:
-      - 50000
-      - 100000
+      - 75000
   extraction_lr:
     distribution: categorical
     values:
@@ -128,7 +127,8 @@ parameters:
   pretrained_model_path:
     distribution: categorical
     values:
-      - "weights-mnist_odd_even_d250_mnist_odd_even.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_0.1.pth"
   model_use_bias:
     distribution: categorical
     values:
