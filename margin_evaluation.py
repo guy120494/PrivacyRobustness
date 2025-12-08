@@ -62,6 +62,7 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
             current_batch = batch_data[0]
             dssim_success_matrix = get_evaluation_score_dssim(current_batch, training_images, ds_mean=0) < threshold
             total_of_successful_reconstructions += (dssim_success_matrix.sum(dim=0) > 0).sum().detach().item()
+            del dssim_success_matrix
     return total_of_successful_reconstructions, total_of_successful_reconstructions / number_of_attacks
 
 
