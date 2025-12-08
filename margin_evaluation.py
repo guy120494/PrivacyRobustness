@@ -1,3 +1,5 @@
+import argparse
+import sys
 from pathlib import Path
 
 import kornia.metrics as metrics
@@ -71,6 +73,16 @@ def generate_random_images():
         print(f"Saved {file_path} with shape {imgs.shape}")
 
 
+def get_args(*args):
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--train_file', type=str)
+    parser.add_argument('--reconstruction_folder', type=str)
+    if not isinstance(args, list):
+        args = args[0]
+    args = parser.parse_args(args)
+    return args
+
+
 if __name__ == '__main__':
-    x = torch.load(r'C:\Users\admin\PycharmProjects\PrivacyRobustness\datasets\cifar-10-batches-py\train_batch.pt')
-    print(get_total_successful_reconstructions(Path("random_images"), Path("random_images") / "images_005.pt"))
+    args = get_args(sys.argv[1:])
+    print(get_total_successful_reconstructions(Path(args.reconstruction_folder), Path(args.train_file)))
