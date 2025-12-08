@@ -54,7 +54,7 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
         reconstructed_images = TensorDataset(torch.load(str(file_path)).to(device))
         reconstructed_images = DataLoader(
             reconstructed_images,
-            batch_size=50,
+            batch_size=10,
             shuffle=False,  # Set to True for training
             drop_last=False
         )
