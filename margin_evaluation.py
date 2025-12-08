@@ -45,7 +45,7 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean):
 
 
 def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, path_to_training_images_file: Path,
-                                         threshold: float = 0.4, device='cuda:0') -> (int, float):
+                                         threshold: float = 0.4, device='cuda:0') -> (int, int):
     training_images = torch.load(str(path_to_training_images_file)).to(device)
     total_of_successful_reconstructions = 0
     number_of_attacks = 0
@@ -63,7 +63,7 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
             dssim_success_matrix = get_evaluation_score_dssim(current_batch, training_images, ds_mean=0) < threshold
             total_of_successful_reconstructions += (dssim_success_matrix.sum(dim=0) > 0).sum().detach().item()
             del dssim_success_matrix
-    return total_of_successful_reconstructions, total_of_successful_reconstructions / number_of_attacks
+    return total_of_successful_reconstructions, number_of_attacks
 
 
 def generate_random_images():
