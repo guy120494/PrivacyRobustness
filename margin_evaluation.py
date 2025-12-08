@@ -47,7 +47,7 @@ def get_dssim_matrix_for_all_attacks(path_to_reconstructions_folder: Path, path_
                                      device='cuda:0') -> Tensor:
     training_images = torch.load(str(path_to_training_images_file)).to(device)
     final_matrix = []
-    for file_path in path_to_reconstructions_folder.rglob('*x_final.pt'):
+    for file_path in path_to_reconstructions_folder.rglob('**/x_final.pt'):
         reconstructed_images = torch.load(str(file_path)).to(device)
         final_matrix.append(get_evaluation_score_dssim(reconstructed_images, training_images, ds_mean=0))
     final_matrix = torch.cat(final_matrix, dim=1)
@@ -85,4 +85,8 @@ def get_args(*args):
 
 if __name__ == '__main__':
     args = get_args(sys.argv[1:])
-    print(get_total_successful_reconstructions(Path(args.reconstruction_folder), Path(args.train_file)))
+    path_to_reconstructions_folder = Path(args.reconstruction_folder)
+    path_to_training_images_file = Path(args.train_file)
+    print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
+    print(f"TRAINING IMAGES {path_to_training_images_file}")
+    print(get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file))
