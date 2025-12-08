@@ -5,6 +5,7 @@ from pathlib import Path
 import kornia.metrics as metrics
 import torch
 from torch import Tensor
+from torch.utils.data import TensorDataset, DataLoader
 
 from evaluations import transform_vmin_vmax_batch
 
@@ -50,9 +51,17 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
     number_of_attacks = 0
     for file_path in path_to_reconstructions_folder.rglob('**/*x_final.pt*'):
         number_of_attacks += 1
-        reconstructed_images = torch.load(str(file_path)).to(device)
-        dssim_success_matrix = get_evaluation_score_dssim(reconstructed_images, training_images, ds_mean=0) < threshold
-        total_of_successful_reconstructions += (dssim_success_matrix.sum(dim=0) > 0).sum().detach().item()
+        reconstructed_images = TensorDataset(torch.load(str(file_path)).to(device))
+        reconstructed_images = DataLoader(
+            reconstructed_images,
+            batch_size=50,
+            shuffle=False,  # Set to True for training
+            drop_last=False
+        )
+        for i, batch_data in enumerate(reconstructed_images):
+            current_batch = batch_data[0]
+            dssim_success_matrix = get_evaluation_score_dssim(current_batch, training_images, ds_mean=0) < threshold
+            total_of_successful_reconstructions += (dssim_success_matrix.sum(dim=0) > 0).sum().detach().item()
     return total_of_successful_reconstructions, total_of_successful_reconstructions / number_of_attacks
 
 
