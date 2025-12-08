@@ -43,24 +43,17 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean):
     return dssim
 
 
-def get_dssim_matrix_for_all_attacks(path_to_reconstructions_folder: Path, path_to_training_images_file: Path,
-                                     device='cuda:0') -> Tensor:
-    training_images = torch.load(str(path_to_training_images_file)).to(device)
-    final_matrix = []
-    for file_path in path_to_reconstructions_folder.rglob('**/*x_final.pt*'):
-        reconstructed_images = torch.load(str(file_path)).to(device)
-        final_matrix.append(get_evaluation_score_dssim(reconstructed_images, training_images, ds_mean=0))
-    final_matrix = torch.cat(final_matrix, dim=1)
-    return final_matrix
-
-
 def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, path_to_training_images_file: Path,
-                                         threshold=0.4, device='cuda:0') -> Tensor:
-    dssim_matrix = get_dssim_matrix_for_all_attacks(path_to_reconstructions_folder, path_to_training_images_file,
-                                                    device)
-    dssim_success_matrix = dssim_matrix < threshold
-    number_of_vulnerable_training_images = (dssim_success_matrix.sum(dim=0) > 0).sum()
-    return number_of_vulnerable_training_images.detach().item()
+                                         threshold: float = 0.4, device='cuda:0') -> (int, float):
+    training_images = torch.load(str(path_to_training_images_file)).to(device)
+    total_of_successful_reconstructions = 0
+    number_of_attacks = 0
+    for file_path in path_to_reconstructions_folder.rglob('**/*x_final.pt*'):
+        number_of_attacks += 1
+        reconstructed_images = torch.load(str(file_path)).to(device)
+        dssim_success_matrix = get_evaluation_score_dssim(reconstructed_images, training_images, ds_mean=0) < threshold
+        total_of_successful_reconstructions += (dssim_success_matrix.sum(dim=0) > 0).sum().detach().item()
+    return total_of_successful_reconstructions, total_of_successful_reconstructions / number_of_attacks
 
 
 def generate_random_images():
