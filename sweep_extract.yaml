@@ -98,13 +98,16 @@ parameters:
   extraction_epochs:
     distribution: categorical
     values:
-      - 75000
+      - 50000
   extraction_lr:
     distribution: categorical
     values:
-      - 1
+      - 0.5549171806490206
+      - 0.3462076508871333
+  extraction_min_lambda:
+    distribution: categorical
+    values:
       - 0.5
-      - 0.1
   extraction_lambda_lr:
     distribution: categorical
     values:
@@ -113,13 +116,12 @@ parameters:
   extraction_model_relu_alpha:
     distribution: categorical
     values:
-      - 150
-      - 300
+      - 20
   extraction_init_scale:
     distribution: categorical
     values:
-      - 0.035
-      - 1e-6
+      - 0.0008857493220221296
+      - 0.004473685426131403
   extraction_data_amount_per_class:
     distribution: categorical
     values:
