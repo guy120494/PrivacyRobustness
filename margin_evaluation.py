@@ -3,11 +3,15 @@ import sys
 from pathlib import Path
 
 import kornia.metrics as metrics
+import numpy as np
 import torch
-from torch import Tensor
 from torch.utils.data import TensorDataset, DataLoader
 
+from CreateModel import create_model
+from GetParams import str2list
+from common_utils.common import load_weights
 from evaluations import transform_vmin_vmax_batch
+from utils import get_margin, get_distances_from_margin
 
 
 def pairwise_ssim(imgs1, imgs2, window_size=3):
@@ -46,7 +50,7 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean):
 
 def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, path_to_training_images_file: Path,
                                          threshold: float = 0.4, device='cuda:0') -> (int, int):
-    training_images = torch.load(str(path_to_training_images_file)).to(device)
+    training_images = torch.load(str(path_to_training_images_file))['x'].to(device)
     total_of_successful_reconstructions = 0
     number_of_attacks = 0
     for file_path in path_to_reconstructions_folder.rglob('**/*x_final.pt*'):
@@ -80,6 +84,17 @@ def get_args(*args):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--train_file', type=str)
     parser.add_argument('--reconstruction_folder', type=str)
+    parser.add_argument('--model', type=str, default='')
+    parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--input_dim', type=int, default=32 * 32 * 3)
+    parser.add_argument('--output_dim', type=int, default=1)
+    parser.add_argument('--model_use_bias', type=bool, default=True)
+    parser.add_argument('--model_hidden_list', default='[1000, 1000]', type=str2list)
+    parser.add_argument('--extraction_model_activation', type=str, default='modifiedrelu')
+    parser.add_argument('--extraction_model_relu_alpha', default=300, type=float)
+    parser.add_argument('--model_type', default='mlp', help='options: mlp')
+    parser.add_argument('--use_init_scale', default=False, type=bool, help='')
+    parser.add_argument('--data_reduce_mean', default=False, type=bool, help='')
     if not isinstance(args, list):
         args = args[0]
     args = parser.parse_args(args)
@@ -93,3 +108,21 @@ if __name__ == '__main__':
     print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
     print(f"TRAINING IMAGES {path_to_training_images_file}")
     print(get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file))
+
+    torch.set_default_dtype(torch.float64)
+
+    model = create_model(args, extraction=True)
+    model.eval()
+    model = load_weights(model, args.model)
+    training_data = torch.load(str(path_to_training_images_file))
+    loader = TensorDataset(training_data['x'].to(args.device), training_data['y'].to(args.device))
+    loader = DataLoader(loader, batch_size=500, shuffle=False, drop_last=False)
+    margin = get_margin(args, model, loader)
+    distances = get_distances_from_margin(args, margin, model, loader)
+    distances += margin
+
+    k = 10
+    bins = margin * (1 + 0.1 * np.arange(k + 1))
+    hist, bins = np.histogram(distances.detach().cpu().numpy(), bins=bins)
+    print("hist:", hist)
+    print("bins:", bins)

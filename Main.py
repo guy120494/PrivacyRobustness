@@ -15,7 +15,8 @@ from CreateData import setup_problem
 from CreateModel import create_model
 from extraction import calc_extraction_loss, evaluate_extraction, get_trainable_params
 from GetParams import get_args
-from utils import normalize_images, unnormalize_images, replace_relu_with_modified_relu
+from utils import normalize_images, unnormalize_images, replace_relu_with_modified_relu, get_margin, \
+    get_distances_from_margin
 
 thread_limit = threadpoolctl.threadpool_limits(limits=8)
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -286,32 +287,6 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
         total_err.update(err)
         total_acc.update((p.sign().view(-1).add(1).div(2) == y).float().mean().item())
     return total_err.avg, total_acc.avg
-
-
-def get_margin(args, model, data_loader):
-    model.eval()
-    margin = float('inf')
-    for x, y in data_loader:
-        x, y = x.to(args.device), y.to(args.device)
-        y = 2 * y - 1
-        if args.data_reduce_mean:
-            x = normalize_images(x, mean=args.mean, std=args.std)
-        candidate_for_margin = torch.min(y * model(x).squeeze()).squeeze().cpu().item()
-        if candidate_for_margin < margin:
-            margin = candidate_for_margin
-    return margin
-
-
-def get_distances_from_margin(args, margin, model, data_loader):
-    distances = []
-    model.eval()
-    for x, y in data_loader:
-        x, y = x.to(args.device), y.to(args.device)
-        y = 2 * y - 1
-        if args.data_reduce_mean:
-            x = normalize_images(x, mean=args.mean, std=args.std)
-        distances.append((y * model(x).squeeze()).squeeze().cpu() - margin)
-    return torch.cat(distances, dim=0)
 
 
 def main_train(args, train_loader, test_loader, val_loader):
