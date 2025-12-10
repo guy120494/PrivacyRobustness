@@ -2,7 +2,7 @@ __author__ = "Niv Haim, Weizmann Institute of Science"
 
 import torch
 import kornia.metrics as metrics
-from tqdm.auto import tqdm
+
 
 def get_ssim_pairs_kornia(x, y):
     return metrics.ssim(x, y, window_size=3).reshape(x.shape[0], -1).mean(dim=1)
@@ -10,14 +10,11 @@ def get_ssim_pairs_kornia(x, y):
 
 def get_ssim_all(x, y):
     ssims = []
-    for i in tqdm(range(y.shape[0])):
+    for i in range(y.shape[0]):
         scores = get_ssim_pairs_kornia(x, y[i:i + 1].expand(x.shape[0], -1, -1, -1))
         ssims.append(scores)
 
     return torch.stack(ssims).t()
-
-
-
 
 # import numpy as np
 # import skimage.io
@@ -118,5 +115,3 @@ def get_ssim_all(x, y):
 #         ssims.append(score)
 #     ssims = torch.tensor(ssims)
 #     return ssims
-
-

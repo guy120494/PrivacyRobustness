@@ -2,7 +2,7 @@ import torch
 import torchvision
 import common_utils
 from common_utils.common import flatten
-from common_utils.image import get_ssim_pairs_kornia
+from common_utils.image import get_ssim_pairs_kornia, get_ssim_all
 
 
 def normalize_batch(x, ret_all=False):
@@ -166,7 +166,11 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean, vote=None, show=False):
         plt.imshow(grid.permute(1, 2, 0).cpu().numpy())
 
     ev_score = dssims[:10].mean()
-    return ev_score.item(), grid
+
+    all_dssim = (1 - get_ssim_all(xx, yy)) / 2
+    all_dssim = all_dssim < 0.4
+    successful_reconstructions = all_dssim.any(axis=0)
+    return ev_score.item(), grid, successful_reconstructions.sum()
 
 
 def get_model_outputs_on_grid(model, lim=1.5, n=1000):

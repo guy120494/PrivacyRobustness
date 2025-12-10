@@ -160,7 +160,8 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
         # SSIM EVALUATION
         xx = x.data.clone()
         yy = x0.clone()
-        dssim_score, dssim_grid = get_evaluation_score_dssim(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False)
+        dssim_score, dssim_grid, successful_reconstructed_train_samples = (
+            get_evaluation_score_dssim(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False))
 
         if args.wandb_active:
             wandb.log({
@@ -170,6 +171,7 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
                 "extraction score with mean": extraction_score_with_mean,
                 "dssim score": dssim_score,
                 "extraction dssim": wandb.Image(dssim_grid),
+                "number of successful reconstructed samples": successful_reconstructed_train_samples
             })
         x_grad = x.grad.clone().data.abs().mean() if x.grad else None
         print(
