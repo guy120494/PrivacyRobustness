@@ -252,6 +252,8 @@ def setup_args(args):
     if args.pretrained_model_path:
         args.model_name = os.path.basename(args.pretrained_model_path)
         args.model_name = os.path.splitext(args.model_name)[0]
+        if args.proj_name:
+            args.model_name += f'_{args.proj_name}'
 
     torch.manual_seed(args.seed)
 
