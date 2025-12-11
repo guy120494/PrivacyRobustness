@@ -1,4 +1,4 @@
-method: random
+method: grid
 metric:
   goal: minimize
   name: loss
