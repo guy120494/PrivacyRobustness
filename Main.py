@@ -315,16 +315,15 @@ def main_train(args, train_loader, test_loader, val_loader):
     if args.wandb_active:
         margin = get_margin(args, trained_model, train_loader)
         distances = get_distances_from_margin(args, margin, trained_model, train_loader)
-        margin_histogram = wandb.Histogram(np_histogram=np.histogram((distances + margin).detach().cpu().numpy(),
-                                                                     bins=margin * (1 + 0.1 * np.arange(11))))
-        distance_histogram = wandb.Histogram(np_histogram=np.histogram(distances.detach().cpu().numpy()))
         wandb.log({"margin": margin, "min distance from margin": torch.min(distances).cpu().squeeze().item(),
                    "average distance from margin": torch.mean(distances).cpu().squeeze().item(),
                    "max distance from margin": torch.max(distances).cpu().squeeze().item(),
                    "number of points with minimum distance": (
                            distances == distances.min()).sum().cpu().squeeze().item(),
-                   "margin histogram": margin_histogram,
-                   "distance histogram": distance_histogram
+                   "margin histogram": wandb.Histogram(
+                       np_histogram=np.histogram((distances + margin).detach().cpu().numpy(),
+                                                 bins=margin * (1 + 0.1 * np.arange(11)))),
+                   "distance histogram": wandb.Histogram(np_histogram=np.histogram(distances.detach().cpu().numpy()))
                    })
 
     if args.train_save_model:
