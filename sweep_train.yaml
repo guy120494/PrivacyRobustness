@@ -67,8 +67,8 @@ parameters:
   model_init_list:
     distribution: categorical
     values:
-      - [0.0001,0.0001]
-      - [0.1, 0.1]
+      - "[0.0001,0.0001]"
+      - "[0.1, 0.1]"
   train_lr:
     distribution: categorical
     values:
