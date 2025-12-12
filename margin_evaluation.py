@@ -70,6 +70,16 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
     return total_of_successful_reconstructions, number_of_attacks
 
 
+def print_histogram(data, bins=10, width=50, header=None):
+    hist, bin_edges = np.histogram(data, bins=bins)
+    max_count = hist.max()
+
+    print("\nHistogram:") if header is None else print(f"\n {header} histogram")
+    for left, right, count in zip(bin_edges[:-1], bin_edges[1:], hist):
+        bar = "#" * int(width * (count / max_count))
+        print(f"{left:8.2f} – {right:8.2f} | {bar} {count}")
+
+
 def generate_random_images():
     dir_path = Path("random_images")
     dir_path.mkdir(exist_ok=True)
@@ -123,6 +133,5 @@ if __name__ == '__main__':
 
     k = 10
     bins = margin * (1 + 0.1 * np.arange(k + 1))
-    hist, bins = np.histogram(distances.detach().cpu().numpy(), bins=bins)
-    print("hist:", hist)
-    print("bins:", bins)
+    print_histogram(data=(margin + distances).detach().cpu().numpy(), bins=bins, header="margin")
+    print_histogram(data=distances.detach().cpu().numpy(), header="distance form margin")
