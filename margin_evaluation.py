@@ -49,10 +49,11 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean):
 
 
 def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, path_to_training_images_file: Path,
-                                         threshold: float = 0.4, device='cuda:0') -> (int, int):
+                                         threshold: float = 0.3, device='cuda:0') -> (int, int):
     training_images = torch.load(str(path_to_training_images_file))['x'].to(device)
-    total_of_successful_reconstructions = 0
+    successful_reconstructions = []
     number_of_attacks = 0
+
     for file_path in path_to_reconstructions_folder.rglob('**/*x_final.pt*'):
         number_of_attacks += 1
         reconstructed_images = TensorDataset(torch.load(str(file_path)).to(device))
@@ -62,12 +63,18 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
             shuffle=False,  # Set to True for training
             drop_last=False
         )
+        successful_batch = []
         for i, batch_data in enumerate(reconstructed_images):
             current_batch = batch_data[0]
             dssim_success_matrix = get_evaluation_score_dssim(current_batch, training_images, ds_mean=0) < threshold
-            total_of_successful_reconstructions += (dssim_success_matrix.sum(dim=0) > 0).sum().detach().item()
+            successful_batch.append(dssim_success_matrix.any(dim=0))
             del dssim_success_matrix
-    return total_of_successful_reconstructions, number_of_attacks
+        successful_batch = torch.stack(successful_batch, dim=0).any(dim=0)
+        successful_reconstructions.append(successful_batch.clone())
+
+    total_number_of_successful_reconstructions = torch.stack(successful_reconstructions, dim=0).any(
+        dim=0).sum().detach().item()
+    return total_number_of_successful_reconstructions, number_of_attacks
 
 
 def print_histogram(data, bins=10, width=50, header=None):

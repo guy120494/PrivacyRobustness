@@ -168,7 +168,7 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean, vote=None, show=False):
     ev_score = dssims[:10].mean()
 
     all_dssim = (1 - get_ssim_all(transform_vmin_vmax_batch(xxx + ds_mean), yy)) / 2
-    all_dssim = all_dssim < 0.4
+    all_dssim = all_dssim < 0.3
     successful_reconstructions = all_dssim.any(axis=0)
     return ev_score.item(), grid, successful_reconstructions.sum()
 
