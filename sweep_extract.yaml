@@ -38,7 +38,7 @@ parameters:
   proj_name:
     distribution: categorical
     values:
-      - cifar10_vehicles_animals_with_reconstructed_train_in_wd
+      - cifar10_vehicles_animals_with_reconstructed_train_in_wb
   run_mode:
     distribution: categorical
     values:
