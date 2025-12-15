@@ -54,7 +54,7 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
     successful_reconstructions = []
     number_of_attacks = 0
 
-    for file_path in path_to_reconstructions_folder.rglob('**/*x_final.pt*'):
+    for file_path in path_to_reconstructions_folder.rglob('**/*x*.pt*'):
         number_of_attacks += 1
         reconstructed_images = TensorDataset(torch.load(str(file_path)).to(device))
         reconstructed_images = DataLoader(
