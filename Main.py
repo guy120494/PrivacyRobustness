@@ -207,13 +207,13 @@ def data_extraction(args, dataset_loader, model):
                 break
 
         # send extraction output to wandb
-        # if (args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0) \
-        #         or (args.extract_save_results and epoch % args.extraction_evaluate_rate == 0):
-        #     torch.save(x, os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'))
-        #     torch.save(l, os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'))
-        #     if args.wandb_active:
-        #         wandb.save(os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'), base_path=args.wandb_base_path)
-        #         wandb.save(os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'), base_path=args.wandb_base_path)
+        if (args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0) \
+                or (args.extract_save_results and epoch % args.extraction_evaluate_rate == 0):
+            torch.save(x, os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'))
+            torch.save(l, os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'))
+            if args.wandb_active:
+                wandb.save(os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'), base_path=args.wandb_base_path)
+                wandb.save(os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'), base_path=args.wandb_base_path)
 
     if args.extract_save_results:
         torch.save(x, os.path.join(args.output_dir, 'x', f'x_final.pth'))
