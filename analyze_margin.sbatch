@@ -15,4 +15,4 @@ echo "SLURM_JOBID"=$SLURM_JOBID echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
 module load anaconda              ### load anaconda module
 source activate privacyrobustness            ### activate a conda environment, replace my_env with your conda environment
 CUDA_VISIBLE_DEVICES=0
-python margin_evaluation.py --train_file=/home/smorodin/robustnessPrivacy/PrivacyRobustness/datasets/cifar-10-batches-py/train_batch.pt --reconstruction_folder=/home/smorodin/robustnessPrivacy/PrivacyRobustness/results/weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_0.1
+python margin_evaluation.py --train_file=/home/smorodin/robustnessPrivacy/PrivacyRobustness/datasets/cifar-10-batches-py/train_batch.pt --reconstruction_folder=/home/smorodin/robustnessPrivacy/PrivacyRobustness/results/weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_save_epochs/2025_12_15_11_19_24_742820_weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_save_epochs/x
