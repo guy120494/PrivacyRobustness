@@ -197,7 +197,7 @@ if __name__ == '__main__':
     print(f"DSSIM THRESHOLD {args.threshold}")
     print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
     print(f"TRAINING IMAGES {path_to_training_images_file}")
-    thresholds = [0.2 + i * 0.02 for i in range(11)]
+    thresholds = [0.2 + i * 0.05 for i in range(5)]
     points = []
     for threshold in thresholds:
         y = get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file,
