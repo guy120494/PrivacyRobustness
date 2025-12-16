@@ -97,6 +97,60 @@ def print_histogram(data, bins=10, width=50, header=None):
         print(f"{left:8.2f} – {right:8.2f} | {bar} {count}")
 
 
+def print_graph(points, width=60, height=20):
+    """
+    Print an ASCII graph of (x, y) points to stdout.
+    """
+    if not points:
+        print("(no points)")
+        return
+
+    xs, ys = zip(*points)
+    xmin, xmax = min(xs), max(xs)
+    ymin, ymax = min(ys), max(ys)
+
+    # Avoid division by zero
+    if xmax == xmin:
+        xmax += 1
+    if ymax == ymin:
+        ymax += 1
+
+    # Create empty canvas
+    canvas = [[' ' for _ in range(width)] for _ in range(height)]
+
+    def scale_x(x):
+        return int((x - xmin) / (xmax - xmin) * (width - 1))
+
+    def scale_y(y):
+        return int((y - ymin) / (ymax - ymin) * (height - 1))
+
+    # Plot points
+    for x, y in points:
+        cx = scale_x(x)
+        cy = height - 1 - scale_y(y)
+        canvas[cy][cx] = '*'
+
+    # Draw axes (if zero is in range)
+    if xmin <= 0 <= xmax:
+        x0 = scale_x(0)
+        for r in range(height):
+            canvas[r][x0] = '|'
+
+    if ymin <= 0 <= ymax:
+        y0 = height - 1 - scale_y(0)
+        for c in range(width):
+            canvas[y0][c] = '-'
+
+    if xmin <= 0 <= xmax and ymin <= 0 <= ymax:
+        canvas[y0][x0] = '+'
+
+    # Print
+    for row in canvas:
+        print(''.join(row))
+
+    print(f"x ∈ [{xmin:.2f}, {xmax:.2f}], y ∈ [{ymin:.2f}, {ymax:.2f}]")
+
+
 def generate_random_images():
     dir_path = Path("random_images")
     dir_path.mkdir(exist_ok=True)
@@ -143,21 +197,27 @@ if __name__ == '__main__':
     print(f"DSSIM THRESHOLD {args.threshold}")
     print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
     print(f"TRAINING IMAGES {path_to_training_images_file}")
-    print(get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file,
-                                               threshold=args.threshold))
+    thresholds = [0.2 + i * 0.02 for i in range(11)]
+    points = []
+    for threshold in thresholds:
+        y = get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file,
+                                                 threshold=threshold)[0]
+        points.append((threshold, y))
+    print_graph(points)
+    print([p[0] for p in points])
+    print([p[1] for p in points])
 
-    torch.set_default_dtype(torch.float64)
-
-    model = create_model(args, extraction=True)
-    model.eval()
-    model = load_weights(model, args.model)
-    training_data = torch.load(str(path_to_training_images_file))
-    loader = TensorDataset(training_data['x'].to(args.device), training_data['y'].to(args.device))
-    loader = DataLoader(loader, batch_size=500, shuffle=False, drop_last=False)
-    margin = get_margin(args, model, loader)
-    distances = get_distances_from_margin(args, margin, model, loader)
-
-    k = 10
-    bins = margin * (1 + 0.1 * np.arange(k + 1))
-    print_histogram(data=(margin + distances).detach().cpu().numpy(), bins=bins, header="margin")
-    print_histogram(data=distances.detach().cpu().numpy(), header="distance form margin")
+    # torch.set_default_dtype(torch.float64)
+    # model = create_model(args, extraction=True)
+    # model.eval()
+    # model = load_weights(model, args.model)
+    # training_data = torch.load(str(path_to_training_images_file))
+    # loader = TensorDataset(training_data['x'].to(args.device), training_data['y'].to(args.device))
+    # loader = DataLoader(loader, batch_size=500, shuffle=False, drop_last=False)
+    # margin = get_margin(args, model, loader)
+    # distances = get_distances_from_margin(args, margin, model, loader)
+    #
+    # k = 10
+    # bins = margin * (1 + 0.1 * np.arange(k + 1))
+    # print_histogram(data=(margin + distances).detach().cpu().numpy(), bins=bins, header="margin")
+    # print_histogram(data=distances.detach().cpu().numpy(), header="distance form margin")
