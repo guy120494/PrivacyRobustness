@@ -140,6 +140,7 @@ if __name__ == '__main__':
     args = get_args(sys.argv[1:])
     path_to_reconstructions_folder = Path(args.reconstruction_folder)
     path_to_training_images_file = Path(args.train_file)
+    print(f"DSSIM THRESHOLD {args.threshold}")
     print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
     print(f"TRAINING IMAGES {path_to_training_images_file}")
     print(get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file,
