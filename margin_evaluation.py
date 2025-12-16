@@ -7,8 +7,10 @@ import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
+from CreateData import setup_problem
 from CreateModel import create_model
 from GetParams import str2list
+from Main import setup_args
 from common_utils.common import load_weights
 from evaluations import transform_vmin_vmax_batch
 from utils import get_margin, get_distances_from_margin
@@ -33,13 +35,19 @@ def pairwise_ssim(imgs1, imgs2, window_size=3):
     return ssim_vals.reshape(B1, B2)
 
 
-def get_evaluation_score_dssim(xxx, yyy, ds_mean):
+def get_evaluation_score_dssim(xxx, yyy):
+    """
+    Get dssim matrix for xxx (reconstructions) and yyy (training images). Both should be with mean of training set added
+     (yyy should be the real training images)
+    @param xxx: reconstructions
+    @param yyy: real training set images
+    @return: DSSIM matrix for all dssim scores between xxx and yyy
+    """
     xx = xxx.clone()
     yy = yyy.clone()
 
-    # Scale to images
-    yy += ds_mean
-    xx = transform_vmin_vmax_batch(xx + ds_mean)
+    # Scale reconstructions images
+    xx = transform_vmin_vmax_batch(xx)
 
     # Score
     ssims = pairwise_ssim(xx, yy)
@@ -51,6 +59,8 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean):
 def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, path_to_training_images_file: Path,
                                          threshold: float = 0.3, device='cuda:0') -> (int, int):
     training_images = torch.load(str(path_to_training_images_file))['x'].to(device)
+    mean = training_images.mean(dim=[0, -2, -1]).detach()
+    mean = mean.view(1, 3, 1, 1)
     successful_reconstructions = []
     number_of_attacks = 0
 
@@ -66,7 +76,7 @@ def get_total_successful_reconstructions(path_to_reconstructions_folder: Path, p
         successful_batch = []
         for i, batch_data in enumerate(reconstructed_images):
             current_batch = batch_data[0]
-            dssim_success_matrix = get_evaluation_score_dssim(current_batch, training_images, ds_mean=0) < threshold
+            dssim_success_matrix = get_evaluation_score_dssim(current_batch + mean, training_images) < threshold
             successful_batch.append(dssim_success_matrix.any(dim=0))
             del dssim_success_matrix
         successful_batch = torch.stack(successful_batch, dim=0).any(dim=0)
@@ -101,7 +111,11 @@ def get_args(*args):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--train_file', type=str)
     parser.add_argument('--reconstruction_folder', type=str)
+    parser.add_argument('--run_mode', type=str, default='reconstruct')
     parser.add_argument('--model', type=str, default='')
+    parser.add_argument('--pretrained_model_path', type=str, default='')
+    parser.add_argument('--proj_name', type=str, default='')
+    parser.add_argument('--problem', type=str, default='cifar10_vehicles_animals')
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--input_dim', type=int, default=32 * 32 * 3)
     parser.add_argument('--output_dim', type=int, default=1)
@@ -112,6 +126,9 @@ def get_args(*args):
     parser.add_argument('--model_type', default='mlp', help='options: mlp')
     parser.add_argument('--use_init_scale', default=False, type=bool, help='')
     parser.add_argument('--data_reduce_mean', default=False, type=bool, help='')
+    parser.add_argument('--wandb_active', default=False, type=bool, help='')
+    parser.add_argument('--data_per_class_train', default=250, type=int, help='')
+    parser.add_argument('--seed', default=1, type=int, help='')
     if not isinstance(args, list):
         args = args[0]
     args = parser.parse_args(args)
@@ -136,7 +153,6 @@ if __name__ == '__main__':
     loader = DataLoader(loader, batch_size=500, shuffle=False, drop_last=False)
     margin = get_margin(args, model, loader)
     distances = get_distances_from_margin(args, margin, model, loader)
-    distances += margin
 
     k = 10
     bins = margin * (1 + 0.1 * np.arange(k + 1))
