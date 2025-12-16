@@ -111,8 +111,9 @@ def get_args(*args):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--train_file', type=str)
     parser.add_argument('--reconstruction_folder', type=str)
-    parser.add_argument('--run_mode', type=str, default='reconstruct')
     parser.add_argument('--model', type=str, default='')
+    parser.add_argument('--threshold', type=float, default=0.3)
+    parser.add_argument('--run_mode', type=str, default='reconstruct')
     parser.add_argument('--pretrained_model_path', type=str, default='')
     parser.add_argument('--proj_name', type=str, default='')
     parser.add_argument('--problem', type=str, default='cifar10_vehicles_animals')
@@ -141,7 +142,8 @@ if __name__ == '__main__':
     path_to_training_images_file = Path(args.train_file)
     print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
     print(f"TRAINING IMAGES {path_to_training_images_file}")
-    print(get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file))
+    print(get_total_successful_reconstructions(path_to_reconstructions_folder, path_to_training_images_file,
+                                               threshold=args.threshold))
 
     torch.set_default_dtype(torch.float64)
 
