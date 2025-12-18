@@ -38,7 +38,7 @@ parameters:
   proj_name:
     distribution: categorical
     values:
-      - cifar10_vehicles_animals_with_reconstructed_train_in_wb
+      - cifar10_vehicles_animals
   run_mode:
     distribution: categorical
     values:
@@ -130,10 +130,10 @@ parameters:
     distribution: categorical
     values:
       - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_0.1.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_0.5.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_1.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_5.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_1.5.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_2.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_3.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_4.pth"
   model_use_bias:
     distribution: categorical
     values:

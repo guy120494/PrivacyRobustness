@@ -85,10 +85,10 @@ parameters:
   train_robust_radius:
     distribution: categorical
     values:
-      - 0.1
-      - 0.5
-      - 1
-      - 5
+      - 1.5
+      - 2
+      - 3
+      - 4
   use_init_scale:
     distribution: categorical
     values:
