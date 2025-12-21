@@ -255,6 +255,7 @@ def get_args(*args):
     parser.add_argument('--use_init_scale', default=False, type=bool, help='')
     parser.add_argument('--data_reduce_mean', default=False, type=bool, help='')
     parser.add_argument('--wandb_active', default=False, type=bool, help='')
+    parser.add_argument('--analyze_multiple_thresholds', default=True, type=bool, help='')
     parser.add_argument('--data_per_class_train', default=250, type=int, help='')
     parser.add_argument('--seed', default=1, type=int, help='')
     if not isinstance(args, list):
