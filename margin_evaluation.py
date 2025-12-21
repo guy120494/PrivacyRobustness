@@ -295,9 +295,11 @@ if __name__ == '__main__':
         y1 = get_reconstructions_for_training_images(path_to_first_reconstruction_folder, t1, mean)
         y2 = get_reconstructions_for_training_images(path_to_second_reconstruction_folder, t1, mean)
 
+        save_path = Path(results_base_dir) / args.save_folder / "compare_models.pth"
+        save_path.mkdir(exist_ok=True)
         torch.save(
             {"reconstructed_training": t1, "first_model_reconstructions": y1, "second_model_reconstructions": y2},
-            Path(results_base_dir) / args.save_folder / "compare_models.pth")
+            save_path)
 
     # torch.set_default_dtype(torch.float64)
     # model = create_model(args, extraction=True)
