@@ -300,6 +300,8 @@ if __name__ == '__main__':
         torch.save(
             {"reconstructed_training": t1, "first_model_reconstructions": y1, "second_model_reconstructions": y2},
             save_path)
+        print(f"FIRST MODEL {path_to_first_reconstruction_folder}")
+        print(f"SECOND MODEL {path_to_second_reconstruction_folder}")
 
     # torch.set_default_dtype(torch.float64)
     # model = create_model(args, extraction=True)
