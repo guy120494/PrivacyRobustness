@@ -150,7 +150,7 @@ def get_reconstructed_images(file_path, device):
     reconstructed_images = TensorDataset(torch.load(str(file_path)).to(device))
     reconstructed_images = DataLoader(
         reconstructed_images,
-        batch_size=7,
+        batch_size=3,
         shuffle=False,  # Set to True for training
         drop_last=False
     )
