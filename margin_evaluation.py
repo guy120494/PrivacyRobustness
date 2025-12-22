@@ -150,7 +150,7 @@ def get_reconstructed_images(file_path, device):
     reconstructed_images = TensorDataset(torch.load(str(file_path)).to(device))
     reconstructed_images = DataLoader(
         reconstructed_images,
-        batch_size=10,
+        batch_size=7,
         shuffle=False,  # Set to True for training
         drop_last=False
     )
@@ -289,16 +289,15 @@ if __name__ == '__main__':
     if args.first_reconstruction_folder is not None and args.second_reconstruction_folder is not None:
         path_to_first_reconstruction_folder = Path(args.first_reconstruction_folder)
         path_to_second_reconstruction_folder = Path(args.second_reconstruction_folder)
-        _, t1 = get_successful_reconstructions(path_to_first_reconstruction_folder, training_images, mean,
-                                               args.threshold)
-        # t1 = deduplicate_images(t1)[0]
-        y1 = get_reconstructions_for_training_images(path_to_first_reconstruction_folder, t1, mean)
-        y2 = get_reconstructions_for_training_images(path_to_second_reconstruction_folder, t1, mean)
+        _, training_images = get_successful_reconstructions(path_to_first_reconstruction_folder, training_images, mean,
+                                                            args.threshold)
+        y1 = get_reconstructions_for_training_images(path_to_first_reconstruction_folder, training_images, mean)
+        y2 = get_reconstructions_for_training_images(path_to_second_reconstruction_folder, training_images, mean)
 
         save_path = Path(results_base_dir) / args.save_folder / "compare_models.pth"
         save_path.mkdir(exist_ok=True)
         torch.save(
-            {"reconstructed_training": t1, "first_model_reconstructions": y1, "second_model_reconstructions": y2},
+            {"reconstructed_training": training_images, "first_model_reconstructions": y1, "second_model_reconstructions": y2},
             save_path)
         print(f"FIRST MODEL {path_to_first_reconstruction_folder}")
         print(f"SECOND MODEL {path_to_second_reconstruction_folder}")
