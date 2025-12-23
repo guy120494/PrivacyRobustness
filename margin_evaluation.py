@@ -111,21 +111,12 @@ def get_evaluation_score_dssim(xxx, yyy):
 #
 #     return reconstructions
 
-def get_reconstructions_for_training_images(
-    path_to_reconstructions_folder: Path,
-    training_images,
-    mean,
-    device="cuda:0",
-):
+def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path, training_images, mean,
+                                            device="cuda:0"):
     training_images = training_images.to(device)
 
     reconstructions = torch.zeros_like(training_images, device="cpu")
-    best_dssim = torch.full(
-        (training_images.shape[0],),
-        float("inf"),
-        dtype=torch.float64,
-        device="cpu",
-    )
+    best_dssim = torch.full((training_images.shape[0],), float("inf"), dtype=torch.float64, device="cpu")
 
     with torch.no_grad():
         for file_path in tqdm(path_to_reconstructions_folder.rglob("**/*x*.pt*")):
@@ -284,6 +275,7 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 def get_args(*args):
     parser = argparse.ArgumentParser(description='')
