@@ -90,24 +90,63 @@ def get_evaluation_score_dssim(xxx, yyy):
     return dssim
 
 
-def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path, training_images, mean,
-                                            device='cuda:0'):
-    reconstructions = torch.zeros_like(training_images).to('cpu')
-    best_dssim = torch.full((training_images.shape[0],), float('inf'), dtype=torch.float64).to('cpu')
-    for file_path in tqdm(list(path_to_reconstructions_folder.rglob('**/*x*.pt*'))):
-        reconstructed_images = get_reconstructed_images(file_path, device)
-        for i, batch_data in enumerate(reconstructed_images):
-            current_batch = batch_data[0] + mean
-            print(f"CURRENT BATCH SIZE IS: {current_batch.shape}")
-            print(f"TRAINING IMAGES SIZE IS: {training_images.shape}")
-            dssim_matrix = get_evaluation_score_dssim(current_batch, training_images)
-            col_min_val, col_min_idx = dssim_matrix.min(dim=0)
-            del dssim_matrix
-            mask = col_min_val < best_dssim
-            best_dssim[mask] = col_min_val[mask].to('cpu')
-            col_min_val = col_min_val.masked_fill(~mask, float('inf'))
-            mask = torch.isfinite(col_min_val)
-            reconstructions[mask] = current_batch[col_min_idx[mask]].to('cpu')
+# def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path, training_images, mean,
+#                                             device='cuda:0'):
+#     reconstructions = torch.zeros_like(training_images).to('cpu')
+#     best_dssim = torch.full((training_images.shape[0],), float('inf'), dtype=torch.float64).to('cpu')
+#     for file_path in tqdm(list(path_to_reconstructions_folder.rglob('**/*x*.pt*'))):
+#         reconstructed_images = get_reconstructed_images(file_path, device)
+#         for i, batch_data in enumerate(reconstructed_images):
+#             current_batch = batch_data[0] + mean
+#             print(f"CURRENT BATCH SIZE IS: {current_batch.shape}")
+#             print(f"TRAINING IMAGES SIZE IS: {training_images.shape}")
+#             dssim_matrix = get_evaluation_score_dssim(current_batch, training_images)
+#             col_min_val, col_min_idx = dssim_matrix.min(dim=0)
+#             del dssim_matrix
+#             mask = col_min_val < best_dssim
+#             best_dssim[mask] = col_min_val[mask].to('cpu')
+#             col_min_val = col_min_val.masked_fill(~mask, float('inf'))
+#             mask = torch.isfinite(col_min_val)
+#             reconstructions[mask] = current_batch[col_min_idx[mask]].to('cpu')
+#
+#     return reconstructions
+
+def get_reconstructions_for_training_images(
+    path_to_reconstructions_folder: Path,
+    training_images,
+    mean,
+    device="cuda:0",
+):
+    training_images = training_images.to(device)
+
+    reconstructions = torch.zeros_like(training_images, device="cpu")
+    best_dssim = torch.full(
+        (training_images.shape[0],),
+        float("inf"),
+        dtype=torch.float64,
+        device="cpu",
+    )
+
+    with torch.no_grad():
+        for file_path in tqdm(path_to_reconstructions_folder.rglob("**/*x*.pt*")):
+            reconstructed_images = get_reconstructed_images(file_path, device)
+
+            for batch_data in reconstructed_images:
+                current_batch = (batch_data[0] + mean).to(device)
+                dssim_matrix = get_evaluation_score_dssim(current_batch, training_images)  # GPU+
+                col_min_val, col_min_idx = dssim_matrix.min(dim=0)
+
+                # Move only what we need to CPU
+                col_min_val_cpu = col_min_val.cpu()
+                col_min_idx_cpu = col_min_idx.cpu()
+
+                mask = col_min_val_cpu < best_dssim
+                best_dssim[mask] = col_min_val_cpu[mask]
+
+                reconstructions[mask] = current_batch[col_min_idx_cpu[mask]].cpu()
+
+                # Explicit cleanup
+                del dssim_matrix, col_min_val, col_min_idx, current_batch
 
     return reconstructions
 
