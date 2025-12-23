@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 from torchvision.utils import make_grid
+from tqdm import tqdm
 
 from CreateData import setup_problem
 from CreateModel import create_model
@@ -93,12 +94,13 @@ def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path
                                             device='cuda:0'):
     reconstructions = torch.zeros_like(training_images)
     best_dssim = torch.full((training_images.shape[0],), float('inf'), dtype=torch.float64).to(device)
-    for file_path in path_to_reconstructions_folder.rglob('**/*x*.pt*'):
+    for file_path in tqdm(list(path_to_reconstructions_folder.rglob('**/*x*.pt*'))):
         reconstructed_images = get_reconstructed_images(file_path, device)
         for i, batch_data in enumerate(reconstructed_images):
             current_batch = batch_data[0] + mean
             dssim_matrix = get_evaluation_score_dssim(current_batch, training_images)
             col_min_val, col_min_idx = dssim_matrix.min(dim=0)
+            del dssim_matrix
             mask = col_min_val < best_dssim
             best_dssim[mask] = col_min_val[mask]
             col_min_val = col_min_val.masked_fill(~mask, float('inf'))
