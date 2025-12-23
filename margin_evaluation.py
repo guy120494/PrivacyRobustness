@@ -92,8 +92,8 @@ def get_evaluation_score_dssim(xxx, yyy):
 
 def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path, training_images, mean,
                                             device='cuda:0'):
-    reconstructions = torch.zeros_like(training_images)
-    best_dssim = torch.full((training_images.shape[0],), float('inf'), dtype=torch.float64).to(device)
+    reconstructions = torch.zeros_like(training_images).to('cpu')
+    best_dssim = torch.full((training_images.shape[0],), float('inf'), dtype=torch.float64).to('cpu')
     for file_path in tqdm(list(path_to_reconstructions_folder.rglob('**/*x*.pt*'))):
         reconstructed_images = get_reconstructed_images(file_path, device)
         for i, batch_data in enumerate(reconstructed_images):
@@ -104,10 +104,10 @@ def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path
             col_min_val, col_min_idx = dssim_matrix.min(dim=0)
             del dssim_matrix
             mask = col_min_val < best_dssim
-            best_dssim[mask] = col_min_val[mask]
+            best_dssim[mask] = col_min_val[mask].to('cpu')
             col_min_val = col_min_val.masked_fill(~mask, float('inf'))
             mask = torch.isfinite(col_min_val)
-            reconstructions[mask] = current_batch[col_min_idx[mask]]
+            reconstructions[mask] = current_batch[col_min_idx[mask]].to('cpu')
 
     return reconstructions
 
