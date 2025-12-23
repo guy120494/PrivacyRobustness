@@ -6,6 +6,7 @@ import kornia.metrics as metrics
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
+from torchvision.utils import make_grid
 
 from CreateData import setup_problem
 from CreateModel import create_model
@@ -264,6 +265,56 @@ def get_args(*args):
     return args
 
 
+def reconstruction_comparison_grid(
+        originals: torch.Tensor,
+        recon1: torch.Tensor,
+        recon2: torch.Tensor,
+        nrow: int | None = None,
+        padding: int = 2,
+):
+    """
+    Create a grid:
+        Row 1: original images
+        Row 2: reconstructions (method 1)
+        Row 3: reconstructions (method 2)
+
+    Args:
+        originals: [B, C, H, W] or [B, H, W]
+        recon1:    same shape as originals
+        recon2:    same shape as originals
+        nrow:      number of images per row (default = batch size)
+        padding:   padding between images
+
+    Returns:
+        grid tensor [C, H_grid, W_grid]
+    """
+    assert originals.shape == recon1.shape == recon2.shape, \
+        "All inputs must have the same shape"
+
+    # Ensure 4D tensors
+    if originals.dim() == 3:
+        originals = originals.unsqueeze(1)
+        recon1 = recon1.unsqueeze(1)
+        recon2 = recon2.unsqueeze(1)
+
+    B = originals.size(0)
+    if nrow is None:
+        nrow = B
+
+    # Stack rows vertically: [3B, C, H, W]
+    stacked = torch.cat([originals, recon1, recon2], dim=0)
+
+    # Make grid: 3 rows × B columns
+    grid = make_grid(
+        stacked,
+        nrow=nrow,
+        padding=padding,
+        normalize=False
+    )
+
+    return grid
+
+
 if __name__ == '__main__':
     args = get_args(sys.argv[1:])
     path_to_reconstructions_folder = Path(args.reconstruction_folder)
@@ -297,7 +348,8 @@ if __name__ == '__main__':
         save_path = Path(results_base_dir) / args.save_folder / "compare_models.pth"
         save_path.mkdir(exist_ok=True)
         torch.save(
-            {"reconstructed_training": training_images, "first_model_reconstructions": y1, "second_model_reconstructions": y2},
+            {"reconstructed_training": training_images, "first_model_reconstructions": y1,
+             "second_model_reconstructions": y2},
             save_path)
         print(f"FIRST MODEL {path_to_first_reconstruction_folder}")
         print(f"SECOND MODEL {path_to_second_reconstruction_folder}")
