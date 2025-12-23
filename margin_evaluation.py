@@ -98,7 +98,7 @@ def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path
     best_dssim = torch.full((training_images.shape[0],), float("inf"), dtype=torch.float64, device="cpu")
 
     with torch.no_grad():
-        for file_path in tqdm(path_to_reconstructions_folder.rglob("**/*x*.pt*")):
+        for file_path in path_to_reconstructions_folder.rglob("**/*x*.pt*"):
             reconstructed_images = get_reconstructed_images(file_path, device)
 
             for batch_data in reconstructed_images:
@@ -371,7 +371,7 @@ if __name__ == '__main__':
         y2 = get_reconstructions_for_training_images(path_to_second_reconstruction_folder, training_images, mean)
 
         save_path = Path(results_base_dir) / args.save_folder / "compare_models.pth"
-        save_path.mkdir(exist_ok=True)
+        save_path.parent.mkdir(exist_ok=True)
         torch.save(
             {"reconstructed_training": training_images, "first_model_reconstructions": y1,
              "second_model_reconstructions": y2},
