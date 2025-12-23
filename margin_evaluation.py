@@ -232,6 +232,16 @@ def generate_random_images():
         print(f"Saved {file_path} with shape {imgs.shape}")
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def get_args(*args):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--train_file', type=str)
@@ -248,15 +258,15 @@ def get_args(*args):
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--input_dim', type=int, default=32 * 32 * 3)
     parser.add_argument('--output_dim', type=int, default=1)
-    parser.add_argument('--model_use_bias', type=bool, default=True)
+    parser.add_argument('--model_use_bias', type=str2bool, default=True)
     parser.add_argument('--model_hidden_list', default='[1000, 1000]', type=str2list)
     parser.add_argument('--extraction_model_activation', type=str, default='modifiedrelu')
     parser.add_argument('--extraction_model_relu_alpha', default=300, type=float)
     parser.add_argument('--model_type', default='mlp', help='options: mlp')
-    parser.add_argument('--use_init_scale', default=False, type=bool, help='')
-    parser.add_argument('--data_reduce_mean', default=False, type=bool, help='')
-    parser.add_argument('--wandb_active', default=False, type=bool, help='')
-    parser.add_argument('--analyze_multiple_thresholds', default=True, type=bool, help='')
+    parser.add_argument('--use_init_scale', default=False, type=str2bool, help='')
+    parser.add_argument('--data_reduce_mean', default=False, type=str2bool, help='')
+    parser.add_argument('--wandb_active', default=False, type=str2bool, help='')
+    parser.add_argument('--analyze_multiple_thresholds', default=True, type=str2bool, help='')
     parser.add_argument('--data_per_class_train', default=250, type=int, help='')
     parser.add_argument('--seed', default=1, type=int, help='')
     if not isinstance(args, list):
