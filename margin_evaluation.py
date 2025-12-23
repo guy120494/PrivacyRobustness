@@ -356,7 +356,7 @@ if __name__ == '__main__':
         path_to_second_reconstruction_folder = Path(args.second_reconstruction_folder)
         _, training_images = get_successful_reconstructions(path_to_first_reconstruction_folder, training_images, mean,
                                                             args.threshold)
-        training_images = deduplicate_images(training_images)
+        training_images = deduplicate_images(training_images)[0]
         y1 = get_reconstructions_for_training_images(path_to_first_reconstruction_folder, training_images, mean)
         y2 = get_reconstructions_for_training_images(path_to_second_reconstruction_folder, training_images, mean)
 
