@@ -98,6 +98,8 @@ def get_reconstructions_for_training_images(path_to_reconstructions_folder: Path
         reconstructed_images = get_reconstructed_images(file_path, device)
         for i, batch_data in enumerate(reconstructed_images):
             current_batch = batch_data[0] + mean
+            print(f"CURRENT BATCH SIZE IS: {current_batch.shape}")
+            print(f"TRAINING IMAGES SIZE IS: {training_images.shape}")
             dssim_matrix = get_evaluation_score_dssim(current_batch, training_images)
             col_min_val, col_min_idx = dssim_matrix.min(dim=0)
             del dssim_matrix
