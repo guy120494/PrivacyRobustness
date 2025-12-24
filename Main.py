@@ -1,6 +1,7 @@
 import os
 import random
 import sys
+import tempfile
 
 import threadpoolctl
 import torch
@@ -104,6 +105,8 @@ def train(args, train_loader, test_loader, val_loader, model):
         args.mean = x.mean(dim=[0, -2, -1]).detach()
         # args.std = x.std(dim=[0, -2, -1]).detach()
         args.std = torch.ones_like(x.mean(dim=[0, -2, -1])).detach()  # Should work better with KKT
+
+    all_margins = []
     for epoch in range(args.train_epochs + 1):
         # if args.train_SGD:
         #     train_error, train_loss, output = epoch_ce_sgd(args, train_loader, model, epoch, args.device, args.train_SGD_batch_size, optimizer)
@@ -121,9 +124,15 @@ def train(args, train_loader, test_loader, val_loader, model):
                       f'Epoch {epoch}: train-loss = {train_loss:.8g} ; train-error = {train_error:.4g} ; test-loss = {test_loss:.8g} ; test-error = {test_error:.4g} ; p-std = {output.abs().std()}; p-val = {output.abs().mean()}')
 
             if args.wandb_active:
+                margin = get_margin(args, model, train_loader)
+                distances = get_distances_from_margin(args, margin, model, train_loader)
+                all_margins.append((distances + margin).detach().cpu())
                 wandb.log(
                     {"epoch": epoch, "train loss": train_loss, 'train error': train_error, 'p-val': output.abs().mean(),
-                     'p-std': output.abs().std()})
+                     'p-std': output.abs().std(),
+                     "distance mean": distances.mean().item(), "distances std": distances.std().item(),
+                     "margin mean": (distances + margin).mean().item(),
+                     "margin std": (distances + margin).std().item()})
                 if val_loader is not None:
                     wandb.log({'validation loss': validation_loss, 'validation error': validation_error})
                 if len(x.shape) > 2:
@@ -142,6 +151,14 @@ def train(args, train_loader, test_loader, val_loader, model):
         if args.train_save_model_every > 0 and epoch % args.train_save_model_every == 0:
             save_weights(os.path.join(args.output_dir, 'weights'), model, ext_text=args.model_name, epoch=epoch)
 
+    if args.wandb_active:
+        all_margins = torch.stack(all_margins).numpy()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "margins_array.npy")
+            np.save(path, all_margins)
+            artifact = wandb.Artifact("margins_array", type="margin")
+            artifact.add_file(path)
+            wandb.log_artifact(artifact)
     print(now(), 'ENDED TRAINING')
     return model
 
@@ -291,6 +308,27 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     return total_err.avg, total_acc.avg
 
 
+def log_plot_of_margins(values):
+    # Sort descending
+    values_sorted, _ = torch.sort(values.flatten(), descending=True)
+
+    # Plot
+    from matplotlib import pyplot as plt
+    plt.figure()
+    plt.plot(values_sorted.cpu().numpy())
+    plt.xlabel("Index (sorted)")
+    plt.ylabel("Value")
+    title = "Margin of points in descending order"
+    plt.title(title)
+    plt.grid(True)
+
+    # Log to W&B
+    wandb.log({title: wandb.Image(plt)})
+
+    # Close figure to avoid memory leaks
+    plt.close()
+
+
 def main_train(args, train_loader, test_loader, val_loader):
     print('TRAINING A MODEL')
     model = create_model(args, extraction=False)
@@ -318,13 +356,10 @@ def main_train(args, train_loader, test_loader, val_loader):
         wandb.log({"margin": margin, "min distance from margin": torch.min(distances).cpu().squeeze().item(),
                    "average distance from margin": torch.mean(distances).cpu().squeeze().item(),
                    "max distance from margin": torch.max(distances).cpu().squeeze().item(),
-                   "number of points with minimum distance": (
-                           distances == distances.min()).sum().cpu().squeeze().item(),
-                   "margin histogram": wandb.Histogram(
-                       np_histogram=np.histogram((distances + margin).detach().cpu().numpy(),
-                                                 bins=margin * (1 + 0.1 * np.arange(11)))),
-                   "distance histogram": wandb.Histogram(np_histogram=np.histogram(distances.detach().cpu().numpy()))
+                   "number of points up to 10% off margin": (
+                           distances <= 1.1 * distances.min()).sum().cpu().squeeze().item()
                    })
+        log_plot_of_margins(distances + margin)
 
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
