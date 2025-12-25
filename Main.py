@@ -315,7 +315,7 @@ def log_plot_of_margins(values):
     # Plot
     from matplotlib import pyplot as plt
     plt.figure()
-    plt.plot(values_sorted.cpu().numpy())
+    plt.plot(values_sorted.detach().cpu().numpy())
     plt.xlabel("Index (sorted)")
     plt.ylabel("Value")
     title = "Margin of points in descending order"
