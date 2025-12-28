@@ -357,7 +357,7 @@ def main_train(args, train_loader, test_loader, val_loader):
                    "average distance from margin": torch.mean(distances).cpu().squeeze().item(),
                    "max distance from margin": torch.max(distances).cpu().squeeze().item(),
                    "number of points up to 10% off margin": (
-                           distances <= 1.1 * distances.min()).sum().cpu().squeeze().item()
+                           distances + margin <= 1.1 * (distances + margin).min()).sum().cpu().squeeze().item()
                    })
         log_plot_of_margins(distances + margin)
 
