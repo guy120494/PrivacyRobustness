@@ -280,63 +280,13 @@ def get_args(*args):
     parser.add_argument('--use_init_scale', default='false', type=str2bool, help='')
     parser.add_argument('--data_reduce_mean', default='false', type=str2bool, help='')
     parser.add_argument('--wandb_active', default='false', type=str2bool, help='')
-    parser.add_argument('--analyze_multiple_thresholds', default='true', type=str2bool, help='')
+    parser.add_argument('--analyze_multiple_thresholds', default='false', type=str2bool, help='')
     parser.add_argument('--data_per_class_train', default=250, type=int, help='')
     parser.add_argument('--seed', default=1, type=int, help='')
     if not isinstance(args, list):
         args = args[0]
     args = parser.parse_args(args)
     return args
-
-
-def reconstruction_comparison_grid(
-        originals: torch.Tensor,
-        recon1: torch.Tensor,
-        recon2: torch.Tensor,
-        nrow: int | None = None,
-        padding: int = 2,
-):
-    """
-    Create a grid:
-        Row 1: original images
-        Row 2: reconstructions (method 1)
-        Row 3: reconstructions (method 2)
-
-    Args:
-        originals: [B, C, H, W] or [B, H, W]
-        recon1:    same shape as originals
-        recon2:    same shape as originals
-        nrow:      number of images per row (default = batch size)
-        padding:   padding between images
-
-    Returns:
-        grid tensor [C, H_grid, W_grid]
-    """
-    assert originals.shape == recon1.shape == recon2.shape, \
-        "All inputs must have the same shape"
-
-    # Ensure 4D tensors
-    if originals.dim() == 3:
-        originals = originals.unsqueeze(1)
-        recon1 = recon1.unsqueeze(1)
-        recon2 = recon2.unsqueeze(1)
-
-    B = originals.size(0)
-    if nrow is None:
-        nrow = B
-
-    # Stack rows vertically: [3B, C, H, W]
-    stacked = torch.cat([originals, recon1, recon2], dim=0)
-
-    # Make grid: 3 rows × B columns
-    grid = make_grid(
-        stacked,
-        nrow=nrow,
-        padding=padding,
-        normalize=False
-    )
-
-    return grid
 
 
 if __name__ == '__main__':
