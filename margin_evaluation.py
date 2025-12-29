@@ -291,17 +291,17 @@ def get_args(*args):
 
 if __name__ == '__main__':
     args = get_args(sys.argv[1:])
-    path_to_reconstructions_folder = Path(args.reconstruction_folder)
     path_to_training_images_file = Path(args.train_file)
     training_images = torch.load(str(path_to_training_images_file))['x'].to(args.device)
     mean = training_images.mean(dim=[0, -2, -1]).detach()
     mean = mean.view(1, 3, 1, 1)
 
     print(f"DSSIM THRESHOLD {args.threshold}")
-    print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
     print(f"TRAINING IMAGES {path_to_training_images_file}")
 
     if args.analyze_multiple_thresholds:
+        path_to_reconstructions_folder = Path(args.reconstruction_folder)
+        print(f"RECONSTRUCTION FOLDER {path_to_reconstructions_folder}")
         thresholds = [0.2 + i * 0.05 for i in range(5)]
         points = []
         for threshold in thresholds:
