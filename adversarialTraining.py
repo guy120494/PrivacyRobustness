@@ -2,9 +2,38 @@ from collections import namedtuple
 import torch
 # import foolbox as fb
 import torch.nn.functional as F
+from autoattack.autopgd_base import APGDAttack
 from robustness.attacker import Attacker
+from torch import nn
+from torch.nn import BCEWithLogitsLoss
 
 from utils import normalize_images
+
+
+def get_adv_auto_attack(args, model, x, y, radius=None):
+    class BinaryToTwoClassLogits(nn.Module):
+        def __init__(self, original_model, original_args):
+            super().__init__()
+            self.original_model = original_model
+            self.original_args = original_args
+
+        def forward(self, x):
+            if self.original_args.reduce_mean:
+                x = normalize_images(x, self.original_args.mean, self.original_args.std)
+            logit_pos = self.original_model(x)
+
+            # ensure shape (N, 1)
+            if logit_pos.dim() == 1:
+                logit_pos = logit_pos.unsqueeze(1)
+
+            # logits for [class 0, class 1]
+            logits = torch.cat([-logit_pos, logit_pos], dim=1)
+            return logits
+
+    eps = radius if radius is not None else args.train_robust_radius
+    adversary = APGDAttack(BinaryToTwoClassLogits(model, args), norm='L2', n_iter=1, eps=eps, device=args.device)
+    x_adv = adversary.perturb(x, y)
+    return x_adv
 
 
 def get_adv_examples_madrylab(args, model, x, y):
@@ -70,7 +99,7 @@ def get_adv_examples(args, model, x, y, norm_type="l2", grad_norm="l2", radius=N
         outputs = model(normalize_images(x_adv, args.mean, args.std)) if args.data_reduce_mean else model(x_adv)
 
         # Loss computation (avoid branching in loop)
-        loss = F.cross_entropy(outputs.view(-1), y)
+        loss = BCEWithLogitsLoss()(outputs.view(-1), y)
 
         # Backward pass
         grad = torch.autograd.grad(loss, x_adv, only_inputs=True)[0]

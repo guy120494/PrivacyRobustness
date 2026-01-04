@@ -10,7 +10,7 @@ import datetime
 import wandb
 
 import common_utils
-from adversarialTraining import get_adv_examples
+from adversarialTraining import get_adv_auto_attack
 from common_utils.common import AverageValueMeter, load_weights, now, save_weights
 from CreateData import setup_problem
 from CreateModel import create_model
@@ -72,11 +72,11 @@ def epoch_ce(args, dataloader, model, device, opt=None, is_train=True):
 
         if is_train and args.train_robust:
             if args.train_add_adv_examples:
-                x_adv = get_adv_examples(args, model, x, y)
+                x_adv = get_adv_auto_attack(args, model, x, y)
                 x = torch.cat([x, x_adv], dim=0)
                 y = torch.cat([y, y], dim=0)
             else:
-                x = get_adv_examples(args, model, x, y)
+                x = get_adv_auto_attack(args, model, x, y)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
         loss, p = get_loss_ce(args, model, x, y)
@@ -298,7 +298,7 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     model.eval()
     for i, (x, y) in enumerate(train_loader):
         x, y = x.to(args.device), y.to(args.device)
-        x = get_adv_examples(args, model, x, y, radius=0.5)
+        x = get_adv_auto_attack(args, model, x, y, radius=0.5)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
         loss, p = get_loss_ce(args, model, x, y)
