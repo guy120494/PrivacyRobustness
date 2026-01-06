@@ -310,9 +310,10 @@ def log_plot_of_margins(values, compute_for_adv=False):
         table.add_data(i, v)
 
     # Log to W&B
-    key = "output_value_for_adversarial_examples" if compute_for_adv else "output_value_for_real_examples"
-    title = "margin distribution for adversarial examples" if compute_for_adv else \
-        "margin distribution for real examples"
+    key = f"output_value_for_{len(values_sorted)}_adversarial_examples" if compute_for_adv else \
+        f"output_value_for_{len(values_sorted)}_real_examples"
+    title = f"margin distribution for {len(values_sorted)} adversarial examples" if compute_for_adv else \
+        f"margin distribution for {len(values_sorted)} real examples"
     wandb.log({
         key: wandb.plot.line(
             table,
@@ -371,19 +372,19 @@ def main_train(args, train_loader, test_loader, val_loader):
                    "max distance from margin adv": torch.max(distances_adv).cpu().squeeze().item(),
                    "number of points up to 5% off margin adv": (
                            distances_adv + margin_adv <= 1.05 * (
-                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                           distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
                    "number of points up to 10% off margin adv": (
                            distances_adv + margin_adv <= 1.1 * (
-                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                           distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
                    "number of points up to 15% off margin adv": (
                            distances_adv + margin_adv <= 1.15 * (
-                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                           distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
                    "number of points up to 20% off margin adv": (
                            distances_adv + margin_adv <= 1.2 * (
-                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                           distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
                    "number of points up to 25% off margin adv": (
                            distances_adv + margin_adv <= 1.25 * (
-                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item()
+                           distances_adv + margin_adv).min()).sum().cpu().squeeze().item()
                    })
         log_plot_of_margins(distances_adv + margin_adv, compute_for_adv=True)
 
