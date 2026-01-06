@@ -11,7 +11,7 @@ def get_margin(args, model, data_loader, compute_for_adv=False):
         x, y = x.to(args.device), y.to(args.device)
         y = 2 * y - 1
         if compute_for_adv and args.train_robust and args.train_robust_radius > 0:
-            x = get_adv_auto_attack(args, model, x, y)
+            x = get_adv_auto_attack(args, model, x, (y + 1) / 2)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
         candidate_for_margin = torch.min(y * model(x).squeeze()).squeeze().cpu().item()
@@ -27,7 +27,7 @@ def get_distances_from_margin(args, margin, model, data_loader, compute_for_adv=
         x, y = x.to(args.device), y.to(args.device)
         y = 2 * y - 1
         if compute_for_adv and args.train_robust and args.train_robust_radius > 0:
-            x = get_adv_auto_attack(args, model, x, y)
+            x = get_adv_auto_attack(args, model, x, (y + 1) / 2)
         if args.data_reduce_mean:
             x = normalize_images(x, mean=args.mean, std=args.std)
         distances.append((y * model(x).squeeze()).squeeze().detach().cpu() - margin)
