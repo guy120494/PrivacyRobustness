@@ -70,7 +70,7 @@ def epoch_ce(args, dataloader, model, device, opt=None, is_train=True):
     for i, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
 
-        if is_train and args.train_robust:
+        if is_train and args.train_robust and args.train_robust_radius > 0:
             if args.train_add_adv_examples:
                 x_adv = get_adv_auto_attack(args, model, x, y)
                 x = torch.cat([x, x_adv], dim=0)
@@ -151,14 +151,6 @@ def train(args, train_loader, test_loader, val_loader, model):
         if args.train_save_model_every > 0 and epoch % args.train_save_model_every == 0:
             save_weights(os.path.join(args.output_dir, 'weights'), model, ext_text=args.model_name, epoch=epoch)
 
-    if args.wandb_active:
-        all_margins = torch.stack(all_margins).numpy()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = os.path.join(tmpdir, "margins_array.npy")
-            np.save(path, all_margins)
-            artifact = wandb.Artifact("margins_array", type="margin")
-            artifact.add_file(path)
-            wandb.log_artifact(artifact)
     print(now(), 'ENDED TRAINING')
     return model
 
@@ -308,25 +300,28 @@ def get_robustness_error_and_accuracy(args, model, train_loader):
     return total_err.avg, total_acc.avg
 
 
-def log_plot_of_margins(values):
+def log_plot_of_margins(values, compute_for_adv=False):
     # Sort descending
     values_sorted, _ = torch.sort(values.flatten(), descending=True)
 
     # Plot
-    from matplotlib import pyplot as plt
-    plt.figure()
-    plt.plot(values_sorted.detach().cpu().numpy())
-    plt.xlabel("Index (sorted)")
-    plt.ylabel("Value")
-    title = "Margin of points in descending order"
-    plt.title(title)
-    plt.grid(True)
+    table = wandb.Table(columns=["sample idx", "output value"])
+    for i, v in enumerate(values_sorted):
+        table.add_data(i, v)
 
     # Log to W&B
-    wandb.log({title: wandb.Image(plt)})
-
-    # Close figure to avoid memory leaks
-    plt.close()
+    key = "output_value_for_adversarial_examples" if compute_for_adv else "output_value_for_real_examples"
+    title = "margin distribution for adversarial examples" if compute_for_adv else \
+        "margin distribution for real examples"
+    wandb.log({
+        key: wandb.plot.line(
+            table,
+            x="sample idx",
+            y="output value",
+            title=title
+        ),
+        f"{key}_table": table
+    })
 
 
 def main_train(args, train_loader, test_loader, val_loader):
@@ -353,13 +348,44 @@ def main_train(args, train_loader, test_loader, val_loader):
     if args.wandb_active:
         margin = get_margin(args, trained_model, train_loader)
         distances = get_distances_from_margin(args, margin, trained_model, train_loader)
-        wandb.log({"margin": margin, "min distance from margin": torch.min(distances).cpu().squeeze().item(),
+        wandb.log({"margin": margin,
                    "average distance from margin": torch.mean(distances).cpu().squeeze().item(),
                    "max distance from margin": torch.max(distances).cpu().squeeze().item(),
+                   "number of points up to 5% off margin": (
+                           distances + margin <= 1.05 * (distances + margin).min()).sum().cpu().squeeze().item(),
                    "number of points up to 10% off margin": (
-                           distances + margin <= 1.1 * (distances + margin).min()).sum().cpu().squeeze().item()
+                           distances + margin <= 1.1 * (distances + margin).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 15% off margin": (
+                           distances + margin <= 1.15 * (distances + margin).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 20% off margin": (
+                           distances + margin <= 1.2 * (distances + margin).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 25% off margin": (
+                           distances + margin <= 1.25 * (distances + margin).min()).sum().cpu().squeeze().item()
                    })
         log_plot_of_margins(distances + margin)
+
+        margin_adv = get_margin(args, trained_model, train_loader, compute_for_adv=True)
+        distances_adv = get_distances_from_margin(args, margin_adv, trained_model, train_loader, compute_for_adv=True)
+        wandb.log({"margin adv": margin_adv,
+                   "average distance from margin adv": torch.mean(distances_adv).cpu().squeeze().item(),
+                   "max distance from margin adv": torch.max(distances_adv).cpu().squeeze().item(),
+                   "number of points up to 5% off margin adv": (
+                           distances_adv + margin_adv <= 1.05 * (
+                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 10% off margin adv": (
+                           distances_adv + margin_adv <= 1.1 * (
+                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 15% off margin adv": (
+                           distances_adv + margin_adv <= 1.15 * (
+                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 20% off margin adv": (
+                           distances_adv + margin_adv <= 1.2 * (
+                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item(),
+                   "number of points up to 25% off margin adv": (
+                           distances_adv + margin_adv <= 1.25 * (
+                               distances_adv + margin_adv).min()).sum().cpu().squeeze().item()
+                   })
+        log_plot_of_margins(distances_adv + margin_adv, compute_for_adv=True)
 
     if args.train_save_model:
         save_weights(args.output_dir, trained_model, ext_text=args.model_name)
