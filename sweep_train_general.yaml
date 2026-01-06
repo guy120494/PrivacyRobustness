@@ -1,0 +1,127 @@
+method: grid
+metric:
+  goal: minimize
+  name: loss
+parameters:
+  cuda:
+    distribution: categorical
+    values:
+      - true
+  data_per_class_test:
+    distribution: categorical
+    values:
+      - 1000
+  data_per_class_train:
+    distribution: categorical
+    values:
+      - 250
+      - 100
+      - 50
+  data_reduce_mean:
+    distribution: categorical
+    values:
+      - true
+  model_train_activation:
+    distribution: categorical
+    values:
+      - "relu"
+  model_type:
+    distribution: categorical
+    values:
+      - mlp
+  model_use_bias:
+    distribution: categorical
+    values:
+      - true
+  model_hidden_list:
+    values:
+      - "[1000, 1000]"
+    distribution: categorical
+  precision:
+    distribution: categorical
+    values:
+      - single
+  problem:
+    distribution: categorical
+    values:
+      - cifar10_vehicles_animals
+      - celeba_male_female
+  run_mode:
+    distribution: categorical
+    values:
+      - train
+  seed:
+    distribution: categorical
+    values:
+      - 42
+      - 1
+      - 12
+  train_epochs:
+    distribution: categorical
+    values:
+      - 100000
+  train_evaluate_rate:
+    distribution: categorical
+    values:
+      - 500
+  use_init_scale:
+    distribution: categorical
+    values:
+      - true
+  model_init_list:
+    distribution: categorical
+    values:
+      - "[0.00001,0.00001]"
+      - "[0.0001,0.0001]"
+      - "[0.1, 0.1]"
+  train_lr:
+    distribution: categorical
+    values:
+      - 0.1
+      - 0.01
+      - 0.001
+  train_weight_decay:
+    distribution: categorical
+    values:
+      - 0
+      - 1e-4
+      - 1e-3
+      - 0.1
+  train_robust:
+    distribution: categorical
+    values:
+      - true
+  train_robust_epochs:
+    distribution: categorical
+    values:
+      - 1
+  train_robust_radius:
+    distribution: categorical
+    values:
+      - 0
+      - 0.1
+      - 0.5
+      - 1
+      - 3
+      - 5
+  wandb_active:
+    distribution: categorical
+    values:
+      - true
+  wandb_project_name:
+    distribution: categorical
+    values:
+      - Dataset_Extraction
+  save_args_files:
+    distribution: categorical
+    values:
+      - false
+  train_save_model:
+    distribution: categorical
+    values:
+      - false
+  extract_save_results:
+    distribution: categorical
+    values:
+      - false
+program: Main.py
