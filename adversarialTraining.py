@@ -1,13 +1,11 @@
 from collections import namedtuple
 import torch
-# import foolbox as fb
-import torch.nn.functional as F
 from autoattack.autopgd_base import APGDAttack
 from robustness.attacker import Attacker
 from torch import nn
 from torch.nn import BCEWithLogitsLoss
 
-from utils import normalize_images
+from utils.utils import normalize_images
 
 
 def get_adv_auto_attack(args, model, x, y, radius=None):
@@ -33,7 +31,7 @@ def get_adv_auto_attack(args, model, x, y, radius=None):
     eps = radius if radius is not None else args.train_robust_radius
     adversary = APGDAttack(BinaryToTwoClassLogits(model, args), norm='L2', n_iter=1, eps=eps, device=args.device)
     adversary.init_hyperparam(x)
-    _, _, _, x_adv = adversary.attack_single_run(x, y)
+    _, _, _, x_adv = adversary.attack_single_run(x, y.long())
     return x_adv
 
 

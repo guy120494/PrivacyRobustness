@@ -16,8 +16,8 @@ from CreateData import setup_problem
 from CreateModel import create_model
 from extraction import calc_extraction_loss, evaluate_extraction, get_trainable_params
 from GetParams import get_args
-from utils import normalize_images, unnormalize_images, replace_relu_with_modified_relu, get_margin, \
-    get_distances_from_margin
+from utils.margin_utils import get_margin, get_distances_from_margin
+from utils.utils import normalize_images, unnormalize_images, replace_relu_with_modified_relu
 
 thread_limit = threadpoolctl.threadpool_limits(limits=8)
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'

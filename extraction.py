@@ -5,7 +5,7 @@ import wandb
 from common_utils.common import now
 from CreateModel import Flatten
 from evaluations import get_evaluation_score_dssim, viz_nns
-from utils import unnormalize_images
+from utils.utils import unnormalize_images
 
 
 def l2_dist(x, y):
