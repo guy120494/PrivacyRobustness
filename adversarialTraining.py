@@ -18,7 +18,7 @@ def get_adv_auto_attack(args, model, x, y, radius=None):
             self.original_args = original_args
 
         def forward(self, x):
-            if self.original_args.reduce_mean:
+            if self.original_args.data_reduce_mean:
                 x = normalize_images(x, self.original_args.mean, self.original_args.std)
             logit_pos = self.original_model(x)
 
@@ -32,7 +32,8 @@ def get_adv_auto_attack(args, model, x, y, radius=None):
 
     eps = radius if radius is not None else args.train_robust_radius
     adversary = APGDAttack(BinaryToTwoClassLogits(model, args), norm='L2', n_iter=1, eps=eps, device=args.device)
-    x_adv = adversary.perturb(x, y)
+    adversary.init_hyperparam(x)
+    _, _, _, x_adv = adversary.attack_single_run(x, y)
     return x_adv
 
 
