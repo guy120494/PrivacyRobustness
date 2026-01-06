@@ -134,6 +134,7 @@ parameters:
       - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_2.pth"
       - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_3.pth"
       - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_4.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_robust_radius_5.pth"
   model_use_bias:
     distribution: categorical
     values:
