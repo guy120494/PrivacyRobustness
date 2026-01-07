@@ -46,6 +46,7 @@ parameters:
     values:
       - cifar10_vehicles_animals
       - celeba_male_female
+      - imagenet
   run_mode:
     distribution: categorical
     values:
@@ -86,7 +87,6 @@ parameters:
       - 0
       - 1e-4
       - 1e-3
-      - 0.1
   train_robust:
     distribution: categorical
     values:
