@@ -14,6 +14,9 @@ def setup_problem(args):
     elif args.problem == 'celeba_male_female':
         from problems.celeba_male_female import get_dataloader
         return get_dataloader(args)
+    elif args.problem == 'imagenet':
+        from problems.imagenet import get_dataloader
+        return get_dataloader(args)
     else:
         raise ValueError(f'Unknown args.problem={args.problem}')
     return data_loader
