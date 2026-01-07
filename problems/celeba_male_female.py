@@ -47,7 +47,7 @@ def load_celebA_male_female(args):
     Loads the CelebA dataset, partitions by gender (Male=1, Female=0),
     and samples a balanced subset with 250 train and 250 test images per class.
     """
-    root_dir = Path(args.datasets_dir) / "celeba"
+    root_dir = Path(args.datasets_dir)
 
     # === Step 1: Define transforms ===
     transform = transforms.Compose([
@@ -109,7 +109,7 @@ def get_dataloader(args):
     args.input_dim = 64 * 64 * 3
     args.num_classes = 2
     args.output_dim = 1
-    args.dataset = 'imagenet'
+    args.dataset = 'celeba'
 
     if args.run_mode == 'reconstruct' or args.run_mode == 'train_reconstruct':
         args.extraction_data_amount = args.extraction_data_amount_per_class * args.num_classes
