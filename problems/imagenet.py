@@ -1,3 +1,4 @@
+import itertools
 import os
 import random
 import shutil
@@ -104,8 +105,14 @@ def load_imagenet_data(args):
             test_split = cls_indices[
                          args.data_per_class_train:args.data_per_class_train + args.data_test_amount // args.num_classes]
 
-        train_indices.extend(train_split)
-        test_indices.extend(test_split)
+        # zip_longest fills missing spots with None by default
+        combined_iterator = itertools.zip_longest(train_indices, train_split, fillvalue=None)
+        # chain.from_iterable flattens the iterator of tuples into a single sequence
+        train_indices = [item for item in itertools.chain.from_iterable(combined_iterator) if item is not None]
+        # zip_longest fills missing spots with None by default
+        combined_iterator = itertools.zip_longest(test_indices, test_split, fillvalue=None)
+        # chain.from_iterable flattens the iterator of tuples into a single sequence
+        test_indices = [item for item in itertools.chain.from_iterable(combined_iterator) if item is not None]
 
     # === Step 6: Create subsets and loaders ===
     train_subset = Subset(dataset, train_indices)
@@ -138,4 +145,5 @@ def get_dataloader(args):
     args.data_test_amount = 500
 
     data_loader = load_imagenet_data(args)
+
     return data_loader
