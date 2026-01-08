@@ -44,9 +44,9 @@ parameters:
   problem:
     distribution: categorical
     values:
-      - cifar10_vehicles_animals
       - celeba_male_female
       - imagenet
+      - cifar10_vehicles_animals
   run_mode:
     distribution: categorical
     values:
