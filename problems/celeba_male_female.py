@@ -5,6 +5,26 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
 
+class CelebAGender(torch.utils.data.Dataset):
+    def __init__(self, celebA_dataset, male_idx):
+        self.ds = celebA_dataset
+        self.male_idx = male_idx
+
+    def __len__(self):
+        return len(self.ds)
+
+    def __getitem__(self, idx):
+        img, attrs = self.ds[idx]
+
+        # attrs are in {-1, +1}
+        male = attrs[self.male_idx]
+
+        # convert to {0,1}: 1=male, 0=female
+        label = (male == 1).long()
+
+        return img, label
+
+
 def move_to_type_device(x, y, device):
     print('X:', x.shape)
     print('y:', y.shape)
@@ -12,10 +32,6 @@ def move_to_type_device(x, y, device):
     y = y.to(torch.get_default_dtype())
     x, y = x.to(device), y.to(device)
     return x, y
-
-
-def create_labels(y0):
-    return y0 % 2
 
 
 def get_balanced_data(args, data_loader, data_amount):
@@ -27,7 +43,6 @@ def get_balanced_data(args, data_loader, data_amount):
     x0, y0 = [], []
     got_enough = False
     for bx, by in data_loader:
-        by = create_labels(by)
         for i in range(len(bx)):
             if labels_counter[int(by[i])] < data_amount_per_class:
                 labels_counter[int(by[i])] += 1
@@ -93,8 +108,8 @@ def load_celebA_male_female(args):
     train_subset = Subset(dataset, train_indices)
     test_subset = Subset(dataset, test_indices)
 
-    train_loader = DataLoader(train_subset, batch_size=100, shuffle=True)
-    test_loader = DataLoader(test_subset, batch_size=100, shuffle=False)
+    train_loader = DataLoader(CelebAGender(train_subset, attr_idx), batch_size=100, shuffle=True)
+    test_loader = DataLoader(CelebAGender(test_subset, attr_idx), batch_size=100, shuffle=False)
 
     x0, y0 = get_balanced_data(args, train_loader, args.data_amount)
     x0_test, y0_test = get_balanced_data(args, test_loader, args.data_test_amount)
