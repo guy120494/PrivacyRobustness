@@ -24,7 +24,7 @@ def get_args(*args):
     parser.add_argument('--cuda', default='true', type=str2bool, help='')
     parser.add_argument('--seed', default=1, type=int, help='')
     parser.add_argument('--proj_name', default='', help='description of run, for saving stuff')
-    parser.add_argument('--precision', default='double', help='')
+    parser.add_argument('--precision', default='single', help='')
     parser.add_argument('--run_mode', help='options: train, reconstruct',
                         choices=['train', 'reconstruct', 'train_reconstruct'], default='train')
 
