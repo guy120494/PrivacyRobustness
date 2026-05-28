@@ -19,5 +19,3 @@ def setup_problem(args):
         return get_dataloader(args)
     else:
         raise ValueError(f'Unknown args.problem={args.problem}')
-    return data_loader
-

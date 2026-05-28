@@ -79,8 +79,8 @@ def get_kkt_loss(args, values, l, y, model):
     all_grads = []
     for i, (p, grad) in enumerate(zip(model.parameters(), grads)):
         assert p.shape == grad.shape
-        l = (p.detach().data - grad).pow(2).sum()
-        kkt_loss += l
+        layer_loss = (p.detach().data - grad).pow(2).sum()
+        kkt_loss += layer_loss
 
         # Collect flattened tensors for cosine similarity
         all_params.append(p.detach().data.flatten())
@@ -129,7 +129,6 @@ def calc_extraction_loss(args, l, model, values, x, y):
 
 
 def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
-    x = x.clone().data
     if args.wandb_active:
         wandb.log({
             "extraction epoch": epoch,
