@@ -63,10 +63,7 @@ parameters:
   pretrained_model_path:
     distribution: categorical
     values:
-      - "weights-cifar10_vehicles_animals_d250_cifar10_vehicles_animals_non_robust.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_non_robust_radius_0.1.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_robust_radius_0.1.pth"
-      - "weights-cifar10_vehicles_animals_d250_cifar10_robust_radius_0.3.pth"
+      - "weights-cifar10_vehicles_animals_d250_cifar10_radius_0.pth"
 
   # --- model architecture (must match pretrained model) ---
   model_type:
