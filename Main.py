@@ -210,11 +210,11 @@ def data_extraction(args, dataset_loader, model):
         opt_x.step()
         opt_l.step()
 
-        if epoch % args.extraction_evaluate_rate == 0:
-            extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0)
-            if epoch >= args.extraction_stop_threshold and extraction_score > 3300 and args.problem != "sphere":
-                print('Extraction Score is too low. Epoch:', epoch, 'Score:', extraction_score)
-                break
+        # if epoch % args.extraction_evaluate_rate == 0:
+        #     extraction_score = evaluate_extraction(args, epoch, kkt_loss, cos_sim, loss_verify, x, x0)
+        #     if epoch >= args.extraction_stop_threshold and extraction_score > 3300 and args.problem != "sphere":
+        #         print('Extraction Score is too low. Epoch:', epoch, 'Score:', extraction_score)
+        #         break
 
         # send extraction output to wandb
         # if (args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0) \
