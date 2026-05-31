@@ -172,7 +172,7 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
                 "extraction dssim": wandb.Image(dssim_grid),
                 "number of successful reconstructed samples": successful_reconstructed_train_samples
             })
-        x_grad = x.grad.clone().data.abs().mean() if x.grad else None
+        x_grad = x.grad.clone().data.abs().mean() if x.grad is not None else None
         print(
             f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} cosine similarity={cos_sim.item():5.5g} verify={loss_verify.item():5.5g} grads={x_grad} Extraction-Score={extraction_score} Extraction-DSSIM={dssim_score}')
     else:
@@ -180,7 +180,7 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
         extraction_score = v[:10].mean().item()
         if args.wandb_active:
             wandb.log({"extraction mean distance": extraction_score})
-        x_grad = x.grad.clone().data.abs().mean() if x.grad else None
+        x_grad = x.grad.clone().data.abs().mean() if x.grad is not None else None
         print(
             f'{now()} T={epoch} ; Losses: extract={loss_extract.item():5.10g} cosine similarity={cos_sim.item():5.5g} verify={loss_verify.item():5.5g} grads={x_grad} distance={extraction_score}')
 
