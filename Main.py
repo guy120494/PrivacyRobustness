@@ -275,7 +275,7 @@ def setup_args(args):
     else:
         import dateutil.tz
         timestamp = datetime.datetime.now(dateutil.tz.tzlocal()).strftime('%Y_%m_%d_%H_%M_%S')
-        run_name = f'{timestamp}_{np.random.randint(1e5, 1e6)}_{args.model_name}'
+        run_name = f'{timestamp}_{np.random.randint(1e5, 1e6)}'
         args.output_dir = os.path.join(args.results_base_dir, args.model_name, run_name)
     print('OUTPUT_DIR:', args.output_dir)
 
