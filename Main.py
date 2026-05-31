@@ -193,7 +193,7 @@ def data_extraction(args, dataset_loader, model):
     print('y type,shape:', y.type(), y.shape)
     print('l type,shape:', l.type(), l.shape)
 
-    if args.extract_save_result:
+    if args.extract_save_results:
         torch.save(y, os.path.join(args.output_dir, "y.pth"))
     if args.wandb_active:
         wandb.save(os.path.join(wandb.run.dir, "y.pth"), base_path=args.wandb_base_path)
