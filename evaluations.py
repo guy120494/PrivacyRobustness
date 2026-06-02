@@ -157,7 +157,7 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean, vote=None, show=False):
     yy += ds_mean
 
     # Score
-    ssims = get_ssim_pairs_kornia(transform_vmin_vmax_batch(xx + ds_mean), yy)
+    ssims = get_ssim_pairs_kornia((xx + ds_mean).clamp(0, 1), yy)
     dssim = (1 - ssims) / 2
     dssims, sort_idxs = dssim.sort(descending=False)
 
@@ -175,7 +175,7 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean, vote=None, show=False):
 
     ev_score = dssims[:10].mean()
 
-    all_dssim = (1 - get_ssim_all(transform_vmin_vmax_batch(xxx + ds_mean), yy)) / 2
+    all_dssim = (1 - get_ssim_all((xxx + ds_mean).clamp(0, 1), yy)) / 2
     all_dssim = all_dssim < 0.3
     successful_reconstructions = all_dssim.any(axis=0)
     return ev_score.item(), grid, successful_reconstructions.sum()
@@ -223,7 +223,7 @@ def get_evaluation_score_lpips(xxx, yyy, ds_mean, vote=None, show=False):
     yy += ds_mean
 
     # Normalize reconstructions to [0,1], then both to [-1,1] for LPIPS
-    xx_01 = transform_vmin_vmax_batch(xx + ds_mean)
+    xx_01 = (xx + ds_mean).clamp(0, 1)
     yy_01 = yy.clamp(0, 1)
     xx_lpips = xx_01 * 2 - 1
     yy_lpips = yy_01 * 2 - 1
@@ -302,7 +302,7 @@ def get_evaluation_score_clip(xxx, yyy, ds_mean, vote=None, show=False):
     yy += ds_mean
 
     # Scale to [0,1] then apply CLIP's normalization (ViT-B/32 ImageNet stats)
-    xx_01 = transform_vmin_vmax_batch(xx + ds_mean)
+    xx_01 = (xx + ds_mean).clamp(0, 1)
     yy_01 = yy.clamp(0, 1)
 
     clip_mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(1, 3, 1, 1)
