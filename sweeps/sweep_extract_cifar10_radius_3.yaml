@@ -1,7 +1,7 @@
-method: bayes
+﻿method: bayes
 metric:
   goal: minimize
-  name: dssim score
+  name: LPIPS score
 parameters:
   # --- infrastructure ---
   cuda:
@@ -144,3 +144,4 @@ parameters:
     max: 50.0
 
 program: Main.py
+

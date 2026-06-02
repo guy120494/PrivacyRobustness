@@ -1,4 +1,4 @@
-method: grid
+﻿method: grid
 metric:
   goal: minimize
   name: loss

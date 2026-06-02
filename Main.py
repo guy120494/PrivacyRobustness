@@ -397,7 +397,7 @@ def main_train(args, train_loader, test_loader, val_loader):
 def main_reconstruct(args, train_loader):
     print('USING PRETRAINED MODEL AT:', args.pretrained_model_path)
     if args.wandb_active:
-        wandb.define_metric("dssim score", summary="min")
+        wandb.define_metric("LPIPS score", summary="min")
     extraction_model = create_model(args, extraction=True)
     extraction_model.eval()
     extraction_model = load_weights(extraction_model, args.pretrained_model_path, device=args.device)
