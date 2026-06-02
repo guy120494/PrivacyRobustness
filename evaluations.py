@@ -165,7 +165,7 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean, vote=None, show=False):
     xx = xx[sort_idxs]
     yy = yy[sort_idxs]
 
-    qq = torch.stack(common_utils.common.flatten(list(zip(normalize_for_plot(xx + ds_mean), yy))))
+    qq = torch.stack(common_utils.common.flatten(list(zip(transform_vmin_vmax_batch(xx + ds_mean), yy.clamp(0, 1)))))
     grid = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=20)
 
     if show:
@@ -243,7 +243,7 @@ def get_evaluation_score_lpips(xxx, yyy, ds_mean, vote=None, show=False):
     xx = xx[sort_idxs]
     yy = yy[sort_idxs]
 
-    qq = torch.stack(common_utils.common.flatten(list(zip(normalize_for_plot(xx + ds_mean), yy))))
+    qq = torch.stack(common_utils.common.flatten(list(zip(transform_vmin_vmax_batch(xx + ds_mean), yy.clamp(0, 1)))))
     grid = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=20)
 
     if show:
@@ -331,7 +331,7 @@ def get_evaluation_score_clip(xxx, yyy, ds_mean, vote=None, show=False):
     xx = xx[sort_idxs]
     yy = yy[sort_idxs]
 
-    qq = torch.stack(common_utils.common.flatten(list(zip(normalize_for_plot(xx + ds_mean), yy))))
+    qq = torch.stack(common_utils.common.flatten(list(zip(transform_vmin_vmax_batch(xx + ds_mean), yy.clamp(0, 1)))))
     grid = torchvision.utils.make_grid(qq[:100], normalize=False, nrow=20)
 
     if show:
