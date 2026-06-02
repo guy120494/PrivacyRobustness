@@ -4,7 +4,7 @@ import torchvision
 import wandb
 from common_utils.common import now
 from CreateModel import Flatten
-from evaluations import get_evaluation_score_dssim, viz_nns
+from evaluations import get_evaluation_score_dssim, viz_nns, get_evaluation_score_lpips, get_evaluation_score_clip
 from utils.utils import unnormalize_images
 
 
@@ -159,8 +159,14 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
         # SSIM EVALUATION
         xx = x.data.clone()
         yy = x0.clone()
-        dssim_score, dssim_grid, successful_reconstructed_train_samples = (
+        dssim_score, dssim_grid, dssim_successful_reconstructed_train_samples = (
             get_evaluation_score_dssim(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False))
+
+        lpips_score, lpips_grid, lpips_successful_reconstructed_train_samples = (
+            get_evaluation_score_lpips(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False))
+
+        clip_score, clip_grid, clip_successful_reconstructed_train_samples = (
+            get_evaluation_score_clip(xx, yy, args.mean.view(1, 3, 1, 1), vote=None, show=False))
 
         if args.wandb_active:
             wandb.log({
@@ -168,9 +174,18 @@ def evaluate_extraction(args, epoch, loss_extract, cos_sim, loss_verify, x, x0):
                 "extraction score": extraction_score,
                 "extraction with mean": wandb.Image(extraction_grid_with_mean),
                 "extraction score with mean": extraction_score_with_mean,
+
                 "dssim score": dssim_score,
                 "extraction dssim": wandb.Image(dssim_grid),
-                "number of successful reconstructed samples": successful_reconstructed_train_samples
+                "number of successful reconstructed samples dssim": dssim_successful_reconstructed_train_samples,
+
+                "LPIPS score": lpips_score,
+                "LPIPS grid": wandb.Image(lpips_grid),
+                "number of successful reconstructed samples LPIPS": lpips_successful_reconstructed_train_samples,
+
+                "CLIP score": clip_score,
+                "CLIP grid": wandb.Image(clip_grid),
+                "number of successful reconstructed samples CLIP": clip_successful_reconstructed_train_samples
             })
         x_grad = x.grad.clone().data.abs().mean() if x.grad is not None else None
         print(
