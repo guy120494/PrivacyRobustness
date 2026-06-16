@@ -199,7 +199,7 @@ def data_extraction(args, dataset_loader, model):
         wandb.save(os.path.join(wandb.run.dir, "y.pth"), base_path=args.wandb_base_path)
 
     # extraction phase
-    for epoch in range(args.extraction_epochs):
+    for epoch in range(args.extraction_epochs + 1):
         values = model(x).squeeze()
         loss, kkt_loss, cos_sim, loss_verify = calc_extraction_loss(args, l, model, values, x, y)
         if np.isnan(kkt_loss.item()):
@@ -217,10 +217,9 @@ def data_extraction(args, dataset_loader, model):
         #         break
 
         # send extraction output to wandb
-        # if (args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0) \
-        #         or (args.extract_save_results and epoch % args.extraction_evaluate_rate == 0):
-        #     torch.save(x, os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'))
-        #     torch.save(l, os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'))
+        if args.extract_save_results_every > 0 and epoch % args.extract_save_results_every == 0:
+            torch.save(x, os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'))
+            torch.save(l, os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'))
         #     if args.wandb_active:
         #         wandb.save(os.path.join(args.output_dir, 'x', f'{epoch}_x.pth'), base_path=args.wandb_base_path)
         #         wandb.save(os.path.join(args.output_dir, 'l', f'{epoch}_l.pth'), base_path=args.wandb_base_path)
