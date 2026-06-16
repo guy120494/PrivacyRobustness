@@ -150,15 +150,26 @@ def get_evaluation_score_dssim(xxx, yyy, ds_mean, vote=None, show=False):
         xx = torch.cat(xs, dim=0).clone()
         yy = yyy
     else:
-        xx = xxx[idxs[:, 0]]
+        k = min(5, idxs.shape[1])
+        N_train = yyy.shape[0]
+        xx_candidates = xxx[idxs[:, :k]]  # [N_train, k, C, H, W]
         yy = yyy
 
     # Scale to images
     yy += ds_mean
 
-    # Score
-    ssims = get_ssim_pairs_kornia((xx + ds_mean).clamp(0, 1), yy)
-    dssim = (1 - ssims) / 2
+    # Score: for each training image pick the best-scoring reconstruction among top-k NCC candidates
+    if vote is not None:
+        ssims = get_ssim_pairs_kornia((xx + ds_mean).clamp(0, 1), yy)
+        dssim = (1 - ssims) / 2
+    else:
+        C, H, W = xxx.shape[1:]
+        xx_flat = xx_candidates.reshape(N_train * k, C, H, W)
+        yy_rep = yy.unsqueeze(1).expand(-1, k, -1, -1, -1).reshape(N_train * k, C, H, W)
+        ssims_all = get_ssim_pairs_kornia((xx_flat + ds_mean).clamp(0, 1), yy_rep)
+        best_ssim, best_k_idx = ssims_all.view(N_train, k).max(dim=1)
+        xx = xx_candidates[torch.arange(N_train, device=xxx.device), best_k_idx]
+        dssim = (1 - best_ssim) / 2
     dssims, sort_idxs = dssim.sort(descending=False)
 
     # Sort & Show
@@ -217,26 +228,36 @@ def get_evaluation_score_lpips(xxx, yyy, ds_mean, vote=None, show=False):
         xx = torch.cat(xs, dim=0).clone()
         yy = yyy
     else:
-        xx = xxx[idxs[:, 0]]
+        k = min(5, idxs.shape[1])
+        N_train = yyy.shape[0]
+        xx_candidates = xxx[idxs[:, :k]]  # [N_train, k, C, H, W]
         yy = yyy
 
     yy += ds_mean
 
-    # Normalize reconstructions to [0,1], then both to [-1,1] for LPIPS
-    xx_01 = (xx + ds_mean).clamp(0, 1)
-    yy_01 = yy.clamp(0, 1)
-    xx_lpips = xx_01 * 2 - 1
-    yy_lpips = yy_01 * 2 - 1
-
-    # LPIPS backbones need at least 64x64; upsample if smaller (e.g. CIFAR-10 32x32)
-    if xx_lpips.shape[-1] < 64 or xx_lpips.shape[-2] < 64:
-        scale = 64 / min(xx_lpips.shape[-2], xx_lpips.shape[-1])
-        xx_lpips = torch.nn.functional.interpolate(xx_lpips, scale_factor=scale, mode='bicubic', align_corners=False)
-        yy_lpips = torch.nn.functional.interpolate(yy_lpips, scale_factor=scale, mode='bicubic', align_corners=False)
-
     lpips_fn = lpips_lib.LPIPS(net='alex').to(device)
-    with torch.no_grad():
-        lpips_scores = lpips_fn(xx_lpips, yy_lpips).squeeze()  # [N]
+
+    def _to_lpips(t):
+        t = t * 2 - 1
+        if t.shape[-1] < 64 or t.shape[-2] < 64:
+            scale = 64 / min(t.shape[-2], t.shape[-1])
+            t = torch.nn.functional.interpolate(t, scale_factor=scale, mode='bicubic', align_corners=False)
+        return t
+
+    if vote is not None:
+        with torch.no_grad():
+            lpips_scores = lpips_fn(_to_lpips((xx + ds_mean).clamp(0, 1)),
+                                    _to_lpips(yy.clamp(0, 1))).squeeze()
+    else:
+        C, H, W = xxx.shape[1:]
+        xx_flat = xx_candidates.reshape(N_train * k, C, H, W)
+        yy_rep = yy.unsqueeze(1).expand(-1, k, -1, -1, -1).reshape(N_train * k, C, H, W)
+        with torch.no_grad():
+            scores_flat = lpips_fn(_to_lpips((xx_flat + ds_mean).clamp(0, 1)),
+                                   _to_lpips(yy_rep.clamp(0, 1))).squeeze()
+        best_lpips, best_k_idx = scores_flat.view(N_train, k).min(dim=1)
+        xx = xx_candidates[torch.arange(N_train, device=device), best_k_idx]
+        lpips_scores = best_lpips
 
     lpips_sorted, sort_idxs = lpips_scores.sort(descending=False)
 
@@ -296,35 +317,44 @@ def get_evaluation_score_clip(xxx, yyy, ds_mean, vote=None, show=False):
         xx = torch.cat(xs, dim=0).clone()
         yy = yyy
     else:
-        xx = xxx[idxs[:, 0]]
+        k = min(5, idxs.shape[1])
+        N_train = yyy.shape[0]
+        xx_candidates = xxx[idxs[:, :k]]  # [N_train, k, C, H, W]
         yy = yyy
 
     yy += ds_mean
 
-    # Scale to [0,1] then apply CLIP's normalization (ViT-B/32 ImageNet stats)
-    xx_01 = (xx + ds_mean).clamp(0, 1)
-    yy_01 = yy.clamp(0, 1)
-
     clip_mean = torch.tensor([0.48145466, 0.4578275, 0.40821073], device=device).view(1, 3, 1, 1)
     clip_std = torch.tensor([0.26862954, 0.26130258, 0.27577711], device=device).view(1, 3, 1, 1)
 
-    xx_clip = torch.nn.functional.interpolate(xx_01, size=(224, 224), mode='bicubic', align_corners=False)
-    yy_clip = torch.nn.functional.interpolate(yy_01, size=(224, 224), mode='bicubic', align_corners=False)
-    xx_clip = (xx_clip - clip_mean) / clip_std
-    yy_clip = (yy_clip - clip_mean) / clip_std
+    def _to_clip(t):
+        t = torch.nn.functional.interpolate(t, size=(224, 224), mode='bicubic', align_corners=False)
+        return (t - clip_mean) / clip_std
 
     clip_model, _ = clip.load('ViT-B/32', device=device)
     clip_model.eval()
 
-    with torch.no_grad():
-        xx_feat = clip_model.encode_image(xx_clip).float()
-        yy_feat = clip_model.encode_image(yy_clip).float()
+    def _encode(imgs, batch_size=256):
+        feats = []
+        for i in range(0, imgs.shape[0], batch_size):
+            with torch.no_grad():
+                feats.append(clip_model.encode_image(imgs[i:i + batch_size]).float())
+        return torch.nn.functional.normalize(torch.cat(feats, dim=0), dim=1)
 
-    xx_feat = torch.nn.functional.normalize(xx_feat, dim=1)
-    yy_feat = torch.nn.functional.normalize(yy_feat, dim=1)
-
-    # Cosine distance: lower = more similar, consistent with DSSIM/LPIPS direction
-    clip_dist = 1 - (xx_feat * yy_feat).sum(dim=1)  # [N]
+    if vote is not None:
+        xx_feat = _encode(_to_clip((xx + ds_mean).clamp(0, 1)))
+        yy_feat = _encode(_to_clip(yy.clamp(0, 1)))
+        clip_dist = 1 - (xx_feat * yy_feat).sum(dim=1)
+    else:
+        C, H, W = xxx.shape[1:]
+        xx_flat = xx_candidates.reshape(N_train * k, C, H, W)
+        yy_rep = yy.unsqueeze(1).expand(-1, k, -1, -1, -1).reshape(N_train * k, C, H, W)
+        xx_feat = _encode(_to_clip((xx_flat + ds_mean).clamp(0, 1)))
+        yy_feat = _encode(_to_clip(yy_rep.clamp(0, 1)))
+        dist_flat = 1 - (xx_feat * yy_feat).sum(dim=1)
+        best_dist, best_k_idx = dist_flat.view(N_train, k).min(dim=1)
+        xx = xx_candidates[torch.arange(N_train, device=device), best_k_idx]
+        clip_dist = best_dist
 
     clip_sorted, sort_idxs = clip_dist.sort(descending=False)
 
