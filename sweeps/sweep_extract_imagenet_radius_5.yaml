@@ -49,7 +49,7 @@ parameters:
   problem:
     distribution: categorical
     values:
-      - celeba_male_female
+      - imagenet
   data_per_class_train:
     distribution: categorical
     values:
