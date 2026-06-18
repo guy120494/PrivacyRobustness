@@ -1,0 +1,147 @@
+﻿method: bayes
+metric:
+  goal: minimize
+  name: LPIPS score
+parameters:
+  # --- infrastructure ---
+  cuda:
+    distribution: categorical
+    values:
+      - true
+  precision:
+    distribution: categorical
+    values:
+      - single
+  seed:
+    distribution: categorical
+    values:
+      - 1
+  run_mode:
+    distribution: categorical
+    values:
+      - reconstruct
+  wandb_active:
+    distribution: categorical
+    values:
+      - true
+  wandb_project_name:
+    distribution: categorical
+    values:
+      - Dataset_Extraction
+  save_args_files:
+    distribution: categorical
+    values:
+      - false
+  train_save_model:
+    distribution: categorical
+    values:
+      - false
+  extract_save_results:
+    distribution: categorical
+    values:
+      - false
+  extract_save_results_every:
+    distribution: categorical
+    values:
+      - 0
+
+  # --- problem / data ---
+  problem:
+    distribution: categorical
+    values:
+      - celeba_male_female
+  data_per_class_train:
+    distribution: categorical
+    values:
+      - 250
+  data_reduce_mean:
+    distribution: categorical
+    values:
+      - true
+
+  # --- pretrained model (the target to reconstruct from) ---
+  pretrained_model_path:
+    distribution: categorical
+    values:
+      - "weights-imagenet_d250_imagenet_radius_0.pth"
+
+  # --- model architecture (must match pretrained model) ---
+  model_type:
+    distribution: categorical
+    values:
+      - mlp
+  model_hidden_list:
+    distribution: categorical
+    values:
+      - "[1000, 1000]"
+  model_use_bias:
+    distribution: categorical
+    values:
+      - true
+
+  # --- extraction setup ---
+  extraction_model_activation:
+    distribution: categorical
+    values:
+      - modifiedrelu
+  extraction_loss_type:
+    distribution: categorical
+    values:
+      - kkt
+  extraction_random_init:
+    distribution: categorical
+    values:
+      - true
+  extraction_data_amount_per_class:
+    distribution: categorical
+    values:
+      - 500
+  extraction_epochs:
+    distribution: categorical
+    values:
+      - 50000
+  extraction_evaluate_rate:
+    distribution: categorical
+    values:
+      - 1000
+  extraction_stop_threshold:
+    distribution: categorical
+    values:
+      - 5000
+
+  # --- sweep targets: continuous distributions for Bayesian search ---
+  extraction_lr:
+    distribution: log_uniform_values
+    min: 0.05
+    max: 5.0
+  extraction_lambda_lr:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.5
+  extraction_init_scale:
+    distribution: log_uniform_values
+    min: 0.00005
+    max: 0.05
+  extraction_min_lambda:
+    distribution: uniform
+    min: 0.05
+    max: 0.95
+  extraction_model_relu_alpha:
+    distribution: log_uniform_values
+    min: 2.0
+    max: 500.0
+  extraction_alpha_kkt:
+    distribution: log_uniform_values
+    min: 0.05
+    max: 10.0
+  extraction_alpha_prior:
+    distribution: log_uniform_values
+    min: 0.05
+    max: 10.0
+  extraction_alpha_positive_lambdas:
+    distribution: log_uniform_values
+    min: 0.1
+    max: 50.0
+
+program: Main.py
+
