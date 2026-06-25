@@ -114,39 +114,57 @@ def _to_clip_input(t: torch.Tensor, device) -> torch.Tensor:
 # ---------------------------------------------------------------------------
 
 def compute_dssim_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
-                         ds_mean: torch.Tensor) -> torch.Tensor:
+                         ds_mean: torch.Tensor, cand_batch_size: int = 500) -> torch.Tensor:
     """
     Returns (N_train, N_cands) DSSIM matrix.
-    get_ssim_all(x, y) iterates over y (training), returns (N_cands, N_train) → .t() flips it.
+    xxx is on CPU; candidate batches are streamed to GPU.
+    get_ssim_all(x_batch, y) -> (batch, N_train); transposed to fill matrix columns.
     """
-    x_vis = (xxx + ds_mean).clamp(0, 1)
-    y_vis = (yyy + ds_mean).clamp(0, 1)
-    # get_ssim_all(candidates, training) -> (N_cands, N_train)
-    ssim_mat = get_ssim_all(x_vis, y_vis).t()   # (N_train, N_cands)
-    return (1.0 - ssim_mat) / 2.0
+    device = yyy.device
+    ds_mean_cpu = ds_mean.cpu()
+    N_cands = xxx.shape[0]
+    N_train = yyy.shape[0]
+
+    x_vis_cpu = (xxx + ds_mean_cpu).clamp(0, 1)  # CPU
+    y_vis = (yyy + ds_mean).clamp(0, 1)           # GPU
+
+    mat = torch.zeros(N_train, N_cands)
+    for j in range(0, N_cands, cand_batch_size):
+        x_batch = x_vis_cpu[j:j + cand_batch_size].to(device)
+        # get_ssim_all(x, y) -> (N_x, N_y); here (batch, N_train)
+        ssim_batch = get_ssim_all(x_batch, y_vis)
+        mat[:, j:j + cand_batch_size] = ((1.0 - ssim_batch) / 2.0).t().cpu()
+        print(f"  DSSIM: {min(j + cand_batch_size, N_cands)}/{N_cands} candidates done")
+
+    return mat
 
 
 def compute_lpips_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
                          ds_mean: torch.Tensor, batch_size: int = 64) -> torch.Tensor:
-    """Returns (N_train, N_cands) LPIPS matrix (computed row-by-row, batched over candidates)."""
+    """
+    Returns (N_train, N_cands) LPIPS matrix.
+    xxx is on CPU; candidate batches are streamed to GPU per training sample.
+    """
     import lpips as lpips_lib
-    device = xxx.device
+    device = yyy.device
     lpips_fn = lpips_lib.LPIPS(net='alex').to(device)
     lpips_fn.eval()
 
     N_train = yyy.shape[0]
     N_cands = xxx.shape[0]
 
-    x_vis = _to_lpips_input((xxx + ds_mean).clamp(0, 1))  # (N_cands, ...)
-    y_vis = _to_lpips_input((yyy + ds_mean).clamp(0, 1))  # (N_train, ...)
+    ds_mean_cpu = ds_mean.cpu()
+    x_vis_cpu = _to_lpips_input((xxx + ds_mean_cpu).clamp(0, 1))  # CPU
+    y_vis = _to_lpips_input((yyy + ds_mean).clamp(0, 1))          # GPU
 
     mat = torch.zeros(N_train, N_cands)
     with torch.no_grad():
         for i in range(N_train):
-            yi = y_vis[i:i + 1].expand(N_cands, -1, -1, -1)
+            yi = y_vis[i:i + 1]  # (1, C, H, W) on GPU
             row = []
             for j in range(0, N_cands, batch_size):
-                s = lpips_fn(x_vis[j:j + batch_size], yi[j:j + batch_size]).squeeze(dim=-1).squeeze(dim=-1).squeeze(dim=-1)
+                xb = x_vis_cpu[j:j + batch_size].to(device)
+                s = lpips_fn(xb, yi.expand(xb.shape[0], -1, -1, -1)).squeeze(dim=-1).squeeze(dim=-1).squeeze(dim=-1)
                 row.append(s.cpu())
             mat[i] = torch.cat(row)
             if (i + 1) % 50 == 0:
@@ -157,27 +175,42 @@ def compute_lpips_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
 
 def compute_clip_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
                         ds_mean: torch.Tensor, batch_size: int = 256) -> torch.Tensor:
-    """Returns (N_train, N_cands) cosine-distance matrix via CLIP embeddings."""
+    """
+    Returns (N_train, N_cands) cosine-distance matrix via CLIP embeddings.
+    xxx is on CPU; batches are streamed to GPU for encoding.
+    Features are accumulated on CPU to avoid OOM.
+    """
     import clip
-    device = xxx.device
+    device = yyy.device
     clip_model, _ = clip.load('ViT-B/32', device=device)
     clip_model.eval()
 
-    x_vis = (xxx + ds_mean).clamp(0, 1)
-    y_vis = (yyy + ds_mean).clamp(0, 1)
+    ds_mean_cpu = ds_mean.cpu()
+    x_vis_cpu = (xxx + ds_mean_cpu).clamp(0, 1)  # CPU
+    y_vis = (yyy + ds_mean).clamp(0, 1)           # GPU
 
-    def _encode(imgs: torch.Tensor) -> torch.Tensor:
+    def _encode_from_cpu(imgs_cpu: torch.Tensor) -> torch.Tensor:
         feats = []
-        for i in range(0, imgs.shape[0], batch_size):
+        for i in range(0, imgs_cpu.shape[0], batch_size):
+            batch = imgs_cpu[i:i + batch_size].to(device)
             with torch.no_grad():
-                feats.append(clip_model.encode_image(_to_clip_input(imgs[i:i + batch_size], device)).float())
-        return F.normalize(torch.cat(feats, dim=0), dim=1)
+                feats.append(clip_model.encode_image(_to_clip_input(batch, device)).float().cpu())
+        return F.normalize(torch.cat(feats, dim=0), dim=1)  # CPU
 
-    x_feat = _encode(x_vis)          # (N_cands, D)
-    y_feat = _encode(y_vis)          # (N_train, D)
+    def _encode_from_gpu(imgs_gpu: torch.Tensor) -> torch.Tensor:
+        feats = []
+        for i in range(0, imgs_gpu.shape[0], batch_size):
+            with torch.no_grad():
+                feats.append(clip_model.encode_image(_to_clip_input(imgs_gpu[i:i + batch_size], device)).float().cpu())
+        return F.normalize(torch.cat(feats, dim=0), dim=1)  # CPU
 
-    sim_mat = y_feat @ x_feat.t()   # (N_train, N_cands)
-    return 1.0 - sim_mat             # cosine distance
+    print(f"  Encoding {xxx.shape[0]} candidates ...")
+    x_feat = _encode_from_cpu(x_vis_cpu)  # (N_cands, D) on CPU
+    print(f"  Encoding {yyy.shape[0]} training images ...")
+    y_feat = _encode_from_gpu(y_vis)       # (N_train, D) on CPU
+
+    sim_mat = y_feat @ x_feat.t()         # (N_train, N_cands) on CPU
+    return 1.0 - sim_mat
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +247,8 @@ def main():
                         help='Save each (N_train, N_cands) matrix as a .pth file inside --folder')
     parser.add_argument('--lpips_batch_size', type=int, default=64,
                         help='Candidate batch size for LPIPS row computation')
+    parser.add_argument('--cand_batch_size', type=int, default=500,
+                        help='Candidate batch size for DSSIM (controls GPU memory usage)')
     args = parser.parse_args()
 
     device = torch.device(args.device if args.device
@@ -229,7 +264,9 @@ def main():
 
     # ---- Load candidates ----
     print("\n=== Loading candidates ===")
-    xxx = load_candidates(folder, final_only=args.final_only).to(device).float()
+    # Keep candidates on CPU — they may be very large (e.g. 66k × 3 × 64 × 64).
+    # Each metric function streams batches to GPU as needed.
+    xxx = load_candidates(folder, final_only=args.final_only).float()
 
     # ---- Load training data ----
     print("\n=== Loading training data ===")
@@ -254,7 +291,7 @@ def main():
     if 'dssim' in args.metrics:
         print("\n=== Computing DSSIM (all pairs) ===")
         t0 = time.time()
-        mat = compute_dssim_matrix(xxx, yyy, ds_mean)
+        mat = compute_dssim_matrix(xxx, yyy, ds_mean, cand_batch_size=args.cand_batch_size)
         print(f"  DSSIM took {time.time() - t0:.1f}s")
         matrices['dssim'] = mat
         if args.save_matrices:
