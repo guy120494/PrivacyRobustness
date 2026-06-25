@@ -19,5 +19,5 @@ python evaluate_candidates.py \
   --folder weights-imagenet_d250_imagenet_radius_0 \
   --problem imagenet \
   --data_per_class_train 250 \
-  --final_only \
+  --final_only false\
   --save_matrices
