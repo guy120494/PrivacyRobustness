@@ -214,11 +214,55 @@ def compute_clip_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Plotting
 # ---------------------------------------------------------------------------
 
 THRESHOLDS = {'dssim': 0.3, 'lpips': 0.5, 'clip': 0.3}
 METRIC_LABELS = {'dssim': 'DSSIM < 0.30', 'lpips': 'LPIPS < 0.50', 'clip': 'CLIP dist < 0.30'}
+
+
+def plot_coverage_curve(matrix: torch.Tensor, metric_name: str,
+                        n_thresholds: int = 1000, ax=None):
+    """
+    For each threshold t in [0, 1], plots the number of training samples that
+    have at least one candidate with metric score < t.
+
+    Uses searchsorted on sorted best-per-train scores for efficiency.
+    Returns (fig, ax); fig is None if an existing ax was passed in.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    best_per_train = matrix.min(dim=1).values.cpu().numpy()
+    N_train = len(best_per_train)
+
+    thresholds = np.linspace(0, 1, n_thresholds)
+    counts = np.searchsorted(np.sort(best_per_train), thresholds, side='right')
+
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+    ax.plot(thresholds, counts, linewidth=2, label=metric_name.upper())
+    ax.axvline(THRESHOLDS[metric_name.lower()], color='red', linestyle='--', alpha=0.7,
+               label=f'default threshold ({THRESHOLDS[metric_name.lower()]})')
+    ax.set_xlabel('Threshold', fontsize=12)
+    ax.set_ylabel('# training samples with ≥1 candidate below threshold', fontsize=12)
+    ax.set_title(f'Coverage curve — {metric_name.upper()}', fontsize=13)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, N_train)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    if fig is not None:
+        fig.tight_layout()
+
+    return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 
 def main():
@@ -245,6 +289,8 @@ def main():
                         help='Load only x_final.pth from each x/ subdirectory instead of all .pth files')
     parser.add_argument('--save_matrices', action='store_true',
                         help='Save each (N_train, N_cands) matrix as a .pth file inside --folder')
+    parser.add_argument('--save_plots', action='store_true',
+                        help='Save a coverage-curve PNG for each metric inside --folder')
     parser.add_argument('--lpips_batch_size', type=int, default=256,
                         help='Candidate batch size for LPIPS row computation')
     parser.add_argument('--cand_batch_size', type=int, default=5000,
@@ -298,6 +344,11 @@ def main():
             out = folder / f'eval_dssim_matrix_{candidates_tag}.pth'
             torch.save(mat, out)
             print(f"  Saved → {out}")
+        if args.save_plots:
+            fig, _ = plot_coverage_curve(mat, 'dssim')
+            out = folder / f'eval_dssim_coverage_{candidates_tag}.png'
+            fig.savefig(out, dpi=150)
+            print(f"  Saved → {out}")
 
     if 'lpips' in args.metrics:
         print("\n=== Computing LPIPS (all pairs) ===")
@@ -309,6 +360,11 @@ def main():
             out = folder / f'eval_lpips_matrix_{candidates_tag}.pth'
             torch.save(mat, out)
             print(f"  Saved → {out}")
+        if args.save_plots:
+            fig, _ = plot_coverage_curve(mat, 'lpips')
+            out = folder / f'eval_lpips_coverage_{candidates_tag}.png'
+            fig.savefig(out, dpi=150)
+            print(f"  Saved → {out}")
 
     if 'clip' in args.metrics:
         print("\n=== Computing CLIP (all pairs) ===")
@@ -319,6 +375,11 @@ def main():
         if args.save_matrices:
             out = folder / f'eval_clip_matrix_{candidates_tag}.pth'
             torch.save(mat, out)
+            print(f"  Saved → {out}")
+        if args.save_plots:
+            fig, _ = plot_coverage_curve(mat, 'clip')
+            out = folder / f'eval_clip_coverage_{candidates_tag}.png'
+            fig.savefig(out, dpi=150)
             print(f"  Saved → {out}")
 
     # ---- Summary ----
