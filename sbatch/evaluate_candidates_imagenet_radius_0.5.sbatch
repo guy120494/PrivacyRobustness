@@ -20,4 +20,5 @@ python evaluate_candidates.py \
   --problem imagenet \
   --data_per_class_train 250 \
   --final_only false\
-  --save_matrices
+  --save_matrices \
+  --save_plots
