@@ -224,7 +224,8 @@ def main():
         from settings import datasets_dir
         args.datasets_dir = datasets_dir
 
-    folder = Path(args.folder)
+    from settings import results_base_dir
+    folder = Path(results_base_dir) / args.folder
 
     # ---- Load candidates ----
     print("\n=== Loading candidates ===")
