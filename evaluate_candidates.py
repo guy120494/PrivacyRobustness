@@ -208,7 +208,7 @@ def main():
     parser.add_argument('--metrics', nargs='+', default=['dssim', 'lpips', 'clip'],
                         choices=['dssim', 'lpips', 'clip'],
                         help='Metrics to compute')
-    parser.add_argument('--final_only', action='store_true',
+    parser.add_argument('--final_only', type=lambda v: v.lower() in ('1', 'true', 'yes'), default=False,
                         help='Load only x_final.pth from each x/ subdirectory instead of all .pth files')
     parser.add_argument('--save_matrices', action='store_true',
                         help='Save each (N_train, N_cands) matrix as a .pth file inside --folder')
