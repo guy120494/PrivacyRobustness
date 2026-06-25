@@ -249,6 +249,7 @@ def main():
     import time
     matrices: dict[str, torch.Tensor] = {}
     t_start = time.time()
+    candidates_tag = 'final_only' if args.final_only else 'all'
 
     if 'dssim' in args.metrics:
         print("\n=== Computing DSSIM (all pairs) ===")
@@ -257,7 +258,7 @@ def main():
         print(f"  DSSIM took {time.time() - t0:.1f}s")
         matrices['dssim'] = mat
         if args.save_matrices:
-            out = folder / 'eval_dssim_matrix.pth'
+            out = folder / f'eval_dssim_matrix_{candidates_tag}.pth'
             torch.save(mat, out)
             print(f"  Saved → {out}")
 
@@ -268,7 +269,7 @@ def main():
         print(f"  LPIPS took {time.time() - t0:.1f}s")
         matrices['lpips'] = mat
         if args.save_matrices:
-            out = folder / 'eval_lpips_matrix.pth'
+            out = folder / f'eval_lpips_matrix_{candidates_tag}.pth'
             torch.save(mat, out)
             print(f"  Saved → {out}")
 
@@ -279,7 +280,7 @@ def main():
         print(f"  CLIP took {time.time() - t0:.1f}s")
         matrices['clip'] = mat
         if args.save_matrices:
-            out = folder / 'eval_clip_matrix.pth'
+            out = folder / f'eval_clip_matrix_{candidates_tag}.pth'
             torch.save(mat, out)
             print(f"  Saved → {out}")
 
