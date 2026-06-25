@@ -140,7 +140,7 @@ def compute_dssim_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
 
 
 def compute_lpips_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
-                         ds_mean: torch.Tensor, batch_size: int = 64) -> torch.Tensor:
+                         ds_mean: torch.Tensor, batch_size: int = 256) -> torch.Tensor:
     """
     Returns (N_train, N_cands) LPIPS matrix.
     xxx is on CPU; candidate batches are streamed to GPU per training sample.
@@ -245,7 +245,7 @@ def main():
                         help='Load only x_final.pth from each x/ subdirectory instead of all .pth files')
     parser.add_argument('--save_matrices', action='store_true',
                         help='Save each (N_train, N_cands) matrix as a .pth file inside --folder')
-    parser.add_argument('--lpips_batch_size', type=int, default=64,
+    parser.add_argument('--lpips_batch_size', type=int, default=256,
                         help='Candidate batch size for LPIPS row computation')
     parser.add_argument('--cand_batch_size', type=int, default=5000,
                         help='Candidate batch size for DSSIM (controls GPU memory usage)')
