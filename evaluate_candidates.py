@@ -114,7 +114,7 @@ def _to_clip_input(t: torch.Tensor, device) -> torch.Tensor:
 # ---------------------------------------------------------------------------
 
 def compute_dssim_matrix(xxx: torch.Tensor, yyy: torch.Tensor,
-                         ds_mean: torch.Tensor, cand_batch_size: int = 500) -> torch.Tensor:
+                         ds_mean: torch.Tensor, cand_batch_size: int = 5000) -> torch.Tensor:
     """
     Returns (N_train, N_cands) DSSIM matrix.
     xxx is on CPU; candidate batches are streamed to GPU.
@@ -247,7 +247,7 @@ def main():
                         help='Save each (N_train, N_cands) matrix as a .pth file inside --folder')
     parser.add_argument('--lpips_batch_size', type=int, default=64,
                         help='Candidate batch size for LPIPS row computation')
-    parser.add_argument('--cand_batch_size', type=int, default=500,
+    parser.add_argument('--cand_batch_size', type=int, default=5000,
                         help='Candidate batch size for DSSIM (controls GPU memory usage)')
     args = parser.parse_args()
 
