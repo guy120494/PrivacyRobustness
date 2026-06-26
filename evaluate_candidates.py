@@ -329,10 +329,14 @@ def main():
     print(f"ds_mean    : {tuple(ds_mean.shape)}")
 
     # ---- Compute metrics ----
+    import re
     import time
     matrices: dict[str, torch.Tensor] = {}
     t_start = time.time()
     candidates_tag = 'final_only' if args.final_only else 'all'
+    radius_match = re.search(r'radius_[\d.]+', str(folder))
+    if radius_match:
+        candidates_tag += f'_{radius_match.group()}'
 
     if 'dssim' in args.metrics:
         print("\n=== Computing DSSIM (all pairs) ===")
