@@ -2,8 +2,8 @@
 ### sbatch config parameters must start with #SBATCH and must precede any other command. to ignore just add another # - like ##SBATCH
 #SBATCH --partition main                                     ### partition name where to run a job. Use 'main' unless qos is required. qos partitions 'rtx3090' 'rtx2080' 'gtx1080'
 #SBATCH --time 1-00:00:00                                    ### limit the time of job running. Format: D-H:MM:SS
-#SBATCH --job-name eval_candidates_imagenet_r0               ### name of the job
-#SBATCH --output eval_candidates_imagenet_r0-%J.out          ### output log for running job - %J is the job number variable
+#SBATCH --job-name eval_candidates_imagenet_r3               ### name of the job
+#SBATCH --output eval_candidates_imagenet_r3-%J.out          ### output log for running job - %J is the job number variable
 #SBATCH --mail-user=smorodin@post.bgu.ac.il                  ### user's email for sending job status notifications
 #SBATCH --mail-type=END,FAIL                                 ### conditions for sending the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 #SBATCH --gpus=1                                             ### number of GPUs
@@ -16,7 +16,7 @@ module load anaconda
 source activate privacyrobustness
 CUDA_VISIBLE_DEVICES=0
 python processing_results/evaluate_candidates.py \
-  --folder weights-imagenet_d250_imagenet_radius_0 \
+  --folder weights-imagenet_d250_imagenet_radius_3 \
   --problem imagenet \
   --data_per_class_train 250 \
   --final_only false\

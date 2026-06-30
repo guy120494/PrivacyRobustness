@@ -15,7 +15,7 @@ echo "SLURM_JOBID"=$SLURM_JOBID echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
 module load anaconda
 source activate privacyrobustness
 CUDA_VISIBLE_DEVICES=0
-python evaluate_candidates.py \
+python processing_results/evaluate_candidates.py \
   --folder weights-imagenet_d250_imagenet_radius_0.5 \
   --problem imagenet \
   --data_per_class_train 250 \
