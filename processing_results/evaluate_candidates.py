@@ -16,7 +16,6 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-sys.path.insert(0, str(Path(__file__).parent))
 
 from common_utils.image import get_ssim_all
 from CreateData import setup_problem
